@@ -1,0 +1,76 @@
+# ==================================
+# Node.js / Next.js (Frontend)
+# ==================================
+node_modules/
+.pnp
+.pnp.js
+.coverage/
+
+# Next.js specific
+.next/
+out/
+build/
+.vercel/
+next-env.d.ts
+
+# Environment configuration files
+# (Local environments should NEVER be committed)
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug and Error logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js Typescript build cache
+*.tsbuildinfo
+
+
+# ==================================
+# ASP.NET Core / C# (Backend)
+# ==================================
+
+# Build Results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# IDE and Project specific
+.vs/
+.vscode/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+
+# Local Development Settings
+appsettings.Development.json
+
+# SQLite Databases / Local databases
+*.sqlite
+*.db
+
+# ==================================
+# OS Defaults
+# ==================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
