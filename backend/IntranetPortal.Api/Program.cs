@@ -23,6 +23,10 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Configure Multi-Tenant Security Engine native contexts
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IntranetPortal.Api.Security.IPermissionService, IntranetPortal.Api.Security.PermissionService>();
+
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

@@ -32,8 +32,16 @@ export default async function EmployeesPage() {
   const permissionsClaim = user?.Permission || user?.permission || [];
   const permissions = Array.isArray(permissionsClaim) ? permissionsClaim : [permissionsClaim];
   
+  const scopedPermsClaim = user?.ScopedPerm || user?.scopedperm || [];
+  const scopedPerms = Array.isArray(scopedPermsClaim) ? scopedPermsClaim : [scopedPermsClaim];
+
   const canCreate = isAdmin || permissions.includes("HR.Employee.Create");
-  const canEdit = isAdmin || permissions.includes("HR.Employee.Edit");
+
+  const hasSitePermission = (permission: string, siteId: number) => {
+    if (isAdmin) return true;
+    if (scopedPerms.includes(`${permission}:Global`)) return true;
+    return scopedPerms.includes(`${permission}:${siteId}`);
+  };
 
   const res = await fetchWithAuth("/api/employees", { cache: 'no-store' });
   let employees: Employee[] = [];
@@ -111,12 +119,12 @@ export default async function EmployeesPage() {
                         </span>
                       </td>
                       <td className="px-8 py-5 flex items-center justify-end space-x-2">
-                        {canEdit && (
+                        {hasSitePermission("HR.Employee.Edit", emp.siteId) && (
                           <Link href={`/employees/${emp.id}/edit`} className="text-gray-400 hover:text-blue-600 transition-colors font-semibold text-sm bg-white hover:bg-blue-50 px-4 py-2 rounded-lg border border-transparent hover:border-blue-100">
                             Edit
                           </Link>
                         )}
-                        {canEdit && (
+                        {hasSitePermission("HR.Employee.Edit", emp.siteId) && (
                           <form action={deleteEmployeeAction.bind(null, emp.id)}>
                             <button type="submit" className="text-gray-400 hover:text-rose-600 transition-colors font-semibold text-sm bg-white hover:bg-rose-50 px-4 py-2 rounded-lg border border-transparent hover:border-rose-100">Delete</button>
                           </form>

@@ -74,3 +74,8 @@ appsettings.Development.json
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Custom ignore files
+backend/IntranetPortal.Api/build_output.txt
+backend/IntranetPortal.Api/build_errors.txt
+backend/IntranetPortal.Api/errors.txt

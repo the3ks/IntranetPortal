@@ -84,6 +84,10 @@ export default function Sidebar({ user }: { user?: any }) {
                 <svg className="w-5 h-5 text-indigo-400 font-extrabold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                 <span className="font-bold text-indigo-400 tracking-wide">Organization</span>
               </Link>
+              <Link href="/admin/sites" className="hover:bg-gray-800 hover:bg-opacity-50 px-4 py-3 rounded-xl transition-all flex items-center space-x-3 bg-teal-900/10 border border-teal-900/30">
+                <svg className="w-5 h-5 text-teal-400 font-extrabold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span className="font-bold text-teal-400 tracking-wide">Facilities</span>
+              </Link>
               <Link href="/admin/quick-setup" className="hover:bg-gray-800 hover:bg-opacity-50 px-4 py-3 rounded-xl transition-all flex items-center space-x-3 bg-emerald-900/10 border border-emerald-900/30">
                 <svg className="w-5 h-5 text-emerald-400 font-extrabold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                 <span className="font-bold text-emerald-400 tracking-wide">Rapid Config</span>

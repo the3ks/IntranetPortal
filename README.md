@@ -71,3 +71,6 @@ curl -X POST http://localhost:5254/api/auth/seed-test-admin
 5. Seamlessly log in using the Administrator credentials generated in Step 3:
    - **Email:** `admin@company.com`
    - **Password:** `Admin123!`
+### 5. AI-Assisted Development & Documentation
+1. **Living Architecture Docs**: The `docs/ai-architectures/` directory contains the Master Artifacts (`implementation_plan.md`, `task.md`, `walkthrough.md`) serving as the permanent historical documentation hub for the project.
+2. **Synchronizing Updates**: Whenever you finish building a major feature alongside an AI coding assistant, always append **"Sync the AI Docs"** to your final prompt. This ensures the agent explicitly exports its internal structural logs back into this repository so other developers can review the architectural decisions.

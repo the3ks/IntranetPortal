@@ -114,17 +114,25 @@ namespace IntranetPortal.Api.Controllers
                 claims.Add(new Claim(ClaimTypes.Role, "Admin"));
             }
 
-            // Inject the precise granular Developer Constants array explicitly mapping capabilities efficiently!
-            var permissions = user.UserRoles
+            // Inject the precise granular Scoped Permissions explicitly mapping capabilities to strict organizational boundaries!
+            var rolePerms = user.UserRoles
                 .Where(ur => ur.Role != null && ur.Role.RolePermissions != null)
-                .SelectMany(ur => ur.Role.RolePermissions)
-                .Where(rp => rp.Permission != null)
-                .Select(rp => rp.Permission.Name)
-                .Distinct();
+                .SelectMany(ur => ur.Role.RolePermissions.Where(rp => rp.Permission != null).Select(rp => new 
+                { 
+                    PermName = rp.Permission.Name, 
+                    ScopeStr = ur.SiteId.HasValue ? ur.SiteId.Value.ToString() : "Global" 
+                }));
 
-            foreach (var perm in permissions)
+            // Map distinct string constraints natively
+            foreach (var sp in rolePerms.Select(x => $"{x.PermName}:{x.ScopeStr}").Distinct())
             {
-                claims.Add(new Claim("Permission", perm));
+                claims.Add(new Claim("ScopedPerm", sp));
+            }
+
+            // Retain the generic un-scoped 'Permission' list strictly allowing [Authorize(Policy="...")] attributes to function natively
+            foreach (var p in rolePerms.Select(x => x.PermName).Distinct())
+            {
+                claims.Add(new Claim("Permission", p));
             }
 
             var token = new JwtSecurityToken(
