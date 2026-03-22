@@ -28,3 +28,31 @@ input, textarea, select {
 input::placeholder, textarea::placeholder {
   color: #9ca3af !important;
 }
+
+/* Elegant Scrollbar */
+.elegant-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+.elegant-scrollbar:hover {
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent; /* Gray-400 */
+}
+
+.elegant-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.elegant-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.elegant-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 20px;
+}
+
+.elegant-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+}

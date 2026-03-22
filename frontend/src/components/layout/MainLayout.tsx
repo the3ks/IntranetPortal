@@ -9,7 +9,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     <div className="min-h-screen bg-[#f8fafc] flex">
       <Sidebar user={user} />
       <div className="flex-1 flex flex-col md:ml-72 transition-all">
-        <Header />
+        <Header user={user} />
         <main className="p-4 sm:p-8 flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto">
             {children}
