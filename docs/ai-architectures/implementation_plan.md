@@ -191,3 +191,65 @@ To successfully control the geographic Multi-Tenant array, we will deploy an adm
 ### 2. Next.js Hub Configurations
 - **Server Actions Wiring**: Script `/actions/sites.ts` explicitly formatting immutable form data safely against the API matrix.
 - **Graphical Application**: Construct an immersive grid GUI inside `/admin/sites` natively utilizing premium standard Tailwind matrices capturing "Headquarters", "Operational Nodes", and localized structural data explicitly without full-page reloads.
+
+---
+
+## Phase 13: Contextual App Launcher & Universal Portal OS
+As the Intranet expanded rapidly with Departments, Employees, and Sites functionality, the unified global sidebar suffered from cognitive overload. We successfully re-architected the frontend into a scalable "Application OS" paradigm.
+
+### 1. The App Grid (Homepage)
+- **Architecture**: Redesigned `src/app/page.tsx` into a modern App Launcher dropping the global sidebar out of view.
+- **Tiles**: Users are greeted with massive application tiles. The two primary engines are **The Hub** (grouping all standard employee data and documents) and **Administration** (grouping system settings and permission gating).
+
+### 2. Context-Aware Navigation
+- **`Sidebar.tsx` Refactor**: Implemented `usePathname()` logic to assess the active routing cluster. 
+- **Dynamic Gating**: When a user is inside The Hub, the Sidebar *exclusively* renders Corporate Directory structures and Knowledge Base menus. If a user clicks into the Administration app, the sidebar natively purges the directory data to render structural settings, resulting in infinite horizontal scalability.
+
+### 3. Department & Facilities Modular Realignment
+To safely respect the new The Hub context, organizational subsets structurally tied to Administration were explicitly released to global staff natively.
+- **Departments Integration**: Deployed `/departments` with an interactive CRUD interface and dynamic glassmorphic Tailwind modals.
+- **Sites Migration**: Successfully relocated the `/admin/sites` GUI natively to `/sites`. The **Corporate Directory** is now perfectly unified sequentially: `Employees`, `Departments`, and `Geographic Sites`.
+
+---
+
+## Phase 14: Corporate Announcements Engine
+To fully activate **The Hub**, employees require a dedicated interface to broadcast and read internal news, policies, and updates.
+
+### 1. Backend REST API (`AnnouncementsController.cs`)
+- **GET All**: Retrieve announcements ordered by `CreatedAt` descending playfully including the `Author` object to display who posted it visually.
+- **POST/PUT/DELETE**: Restrict creation and mutations structurally using `[Authorize(Policy = "Perm:Admin")]` (or a dedicated `Communications` permission).
+
+### 2. Frontend Realization (`/announcements`)
+- **Server Component Fetching**: Fetch the data directly bypassing client-side loaders.
+- **Data UI**: Construct a visually stunning "News Feed" layout using Tailwind cards with rich typography and date formatting instead of a rigid data Grid.
+- **Sidebar Integration**: Wire the existing empty `Announcements` link in `Sidebar.tsx` dynamically to `/announcements`.
+
+---
+
+## Phase 16: Multi-Tenant Horizontal Scoping
+To achieve true Multi-Tenant isolation, the backend MUST dynamically filter SQL arrays horizontally so that an HR Manager in Japan cannot view or modify Human Resource files stored in Canada.
+
+### 1. The Database Architecture
+- `Department.cs`, `Announcement.cs`, and `Employee.cs` receive `int? SiteId` properties. 
+- A Global resource has `SiteId = null`. A localized resource locks rigidly onto geographical branch IDs.
+
+### 2. Capabilities Extraction
+- `PermissionService` was expanded natively to extract exactly which Site bounds an actor possesses internally. 
+
+### 3. API Controller Traps
+- **POST/PUT/DELETE**: Modifying target arrays executes `_permissionService.ValidateSiteScope()`, which automatically throws an `HTTP 403 Forbidden` flag if unauthorized.
+- **GET**: Polling the database runs `query.ApplySiteScope()` automatically limiting `WHERE SiteId == ...` to intercept unauthorized row reads mathematically.
+
+---
+
+## Phase 17: Structural Security Scaffolding (ISiteScoped)
+Because relying on future developers to remember to explicitly type the `Where(x => ...)` filters into their newly constructed API Controllers is a severe security vulnerability, we successfully implemented physical interfaces globally standardizing the logic.
+
+### 1. The Native Boundary
+- Forged `IntranetPortal.Data/Models/ISiteScoped.cs`.
+- Tagged `Employee`, `Department`, and `Announcement` mechanically.
+
+### 2. Explicit C# Extensions
+- Constructed `SiteScopeExtensions.cs`.
+- Deployed a heavily optimized Extension Method `ApplySiteScope(this IQueryable<T> ...)` and `.ValidateSiteScope(...)`.
+- This definitively guarantees rapid enterprise scalability natively across the pipeline while structurally bypassing the standard Entity Framework Core Global Query Filter blindspot.

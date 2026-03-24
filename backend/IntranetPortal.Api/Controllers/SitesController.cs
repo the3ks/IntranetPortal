@@ -29,7 +29,7 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "Perm:Admin")]
+        [Authorize(Policy = "Perm:Structure.Site.Create")]
         public async Task<IActionResult> CreateSite([FromBody] SiteDto dto)
         {
             var site = new IntranetPortal.Data.Models.Site { Name = dto.Name, Address = dto.Address };
@@ -39,7 +39,7 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "Perm:Admin")]
+        [Authorize(Policy = "Perm:Structure.Site.Edit")]
         public async Task<IActionResult> UpdateSite(int id, [FromBody] SiteDto dto)
         {
             var site = await _context.Sites.FindAsync(id);
@@ -52,7 +52,7 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "Perm:Admin")]
+        [Authorize(Policy = "Perm:Structure.Site.Delete")]
         public async Task<IActionResult> DeleteSite(int id)
         {
             var site = await _context.Sites.FindAsync(id);

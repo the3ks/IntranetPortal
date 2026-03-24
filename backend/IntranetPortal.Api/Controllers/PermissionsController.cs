@@ -22,7 +22,7 @@ namespace IntranetPortal.Api.Controllers
         {
             var permissions = await _context.Permissions
                 .OrderBy(p => p.Name)
-                .Select(p => new { p.Id, p.Name, p.Description })
+                .Select(p => new { p.Id, p.Name, p.Description, p.IsObsolete })
                 .ToListAsync();
 
             return Ok(permissions);

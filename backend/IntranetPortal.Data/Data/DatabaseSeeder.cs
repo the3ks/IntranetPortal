@@ -15,12 +15,7 @@ namespace IntranetPortal.Data.Data
             {
                 new Permission { Name = "System.FullAccess", Description = "God-mode capability across all scopes" },
                 new Permission { Name = "System.ManageRoles", Description = "Create and modify Security Matrices" },
-                new Permission { Name = "System.ManagePositions", Description = "Create and modify HR Job Titles" },
-                new Permission { Name = "HR.Employee.Create", Description = "Onboard new enterprise personnel" },
-                new Permission { Name = "HR.Employee.View", Description = "Access personnel records" },
-                new Permission { Name = "HR.Employee.Edit", Description = "Modify personnel dossiers" },
-                new Permission { Name = "Announcements.View", Description = "Read corporate broadcast messages" },
-                new Permission { Name = "Announcements.Create", Description = "Broadcast corporate messages" }
+                new Permission { Name = "System.ManagePositions", Description = "Create and modify HR Job Titles" }
             };
             
             foreach (var perm in corePermissions)

@@ -4,6 +4,7 @@ using IntranetPortal.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntranetPortal.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260323151934_AddIsObsoleteFlagToPermissions")]
+    partial class AddIsObsoleteFlagToPermissions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -40,9 +43,6 @@ namespace IntranetPortal.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int?>("SiteId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -50,8 +50,6 @@ namespace IntranetPortal.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AuthorId");
-
-                    b.HasIndex("SiteId");
 
                     b.ToTable("Announcements");
                 });
@@ -71,12 +69,7 @@ namespace IntranetPortal.Data.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("SiteId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("SiteId");
 
                     b.ToTable("Departments");
                 });
@@ -320,24 +313,7 @@ namespace IntranetPortal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IntranetPortal.Data.Models.Site", "Site")
-                        .WithMany()
-                        .HasForeignKey("SiteId");
-
                     b.Navigation("Author");
-
-                    b.Navigation("Site");
-                });
-
-            modelBuilder.Entity("IntranetPortal.Data.Models.Department", b =>
-                {
-                    b.HasOne("IntranetPortal.Data.Models.Site", "Site")
-                        .WithMany()
-                        .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Site");
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Employee", b =>

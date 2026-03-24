@@ -3,7 +3,11 @@ import { fetchWithAuth } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 
 export async function createDepartmentAction(formData: FormData) {
-  const data = { name: formData.get("name") };
+  const siteIdRaw = formData.get("siteId");
+  const data = { 
+    name: formData.get("name"),
+    siteId: siteIdRaw ? parseInt(siteIdRaw as string) : null
+  };
 
   const res = await fetchWithAuth("/api/departments", {
     method: "POST",
@@ -12,7 +16,7 @@ export async function createDepartmentAction(formData: FormData) {
   });
 
   if (res.ok) {
-    revalidatePath("/admin/departments");
+    revalidatePath("/departments");
     revalidatePath("/employees/new");
     revalidatePath("/employees/[id]/edit");
   } else {
@@ -22,7 +26,11 @@ export async function createDepartmentAction(formData: FormData) {
 
 export async function updateDepartmentAction(formData: FormData) {
   const id = formData.get("id");
-  const data = { name: formData.get("name") };
+  const siteIdRaw = formData.get("siteId");
+  const data = { 
+    name: formData.get("name"),
+    siteId: siteIdRaw ? parseInt(siteIdRaw as string) : null
+  };
 
   const res = await fetchWithAuth(`/api/departments/${id}`, {
     method: "PUT",
@@ -31,7 +39,7 @@ export async function updateDepartmentAction(formData: FormData) {
   });
 
   if (res.ok) {
-    revalidatePath("/admin/departments");
+    revalidatePath("/departments");
     revalidatePath("/employees");
   } else {
     throw new Error("Failed to update department");
@@ -41,7 +49,7 @@ export async function updateDepartmentAction(formData: FormData) {
 export async function deleteDepartmentAction(id: number) {
   const res = await fetchWithAuth(`/api/departments/${id}`, { method: "DELETE" });
   if (res.ok) {
-    revalidatePath("/admin/departments");
+    revalidatePath("/departments");
     revalidatePath("/employees");
   } else {
     throw new Error("Failed to delete department");

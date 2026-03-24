@@ -1,6 +1,8 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace IntranetPortal.Data.Models
 {
-    public class Employee
+    public class Employee : ISiteScoped
     {
         public int Id { get; set; }
         public required string FullName { get; set; }
@@ -15,7 +17,8 @@ namespace IntranetPortal.Data.Models
         public int? TeamId { get; set; }
         public Team? Team { get; set; }
 
-        public int SiteId { get; set; }
+        [Required]
+        public int? SiteId { get; set; }
         public Site? Site { get; set; }
     }
 }

@@ -1,6 +1,6 @@
 namespace IntranetPortal.Data.Models
 {
-    public class Announcement
+    public class Announcement : ISiteScoped
     {
         public int Id { get; set; }
         public required string Title { get; set; }
@@ -9,5 +9,8 @@ namespace IntranetPortal.Data.Models
         
         public int AuthorId { get; set; }
         public Employee? Author { get; set; }
+
+        public int? SiteId { get; set; }
+        public Site? Site { get; set; }
     }
 }

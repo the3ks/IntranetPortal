@@ -17,10 +17,12 @@ export default async function SitesAdminPage() {
   
   const userRoleClaim = user?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || user?.role || user?.Role;
   const isAdmin = userRoleClaim === "Admin" || (Array.isArray(userRoleClaim) && userRoleClaim.includes("Admin"));
-  
-  if (!isAdmin) {
-    redirect("/");
-  }
+  const permissionsClaim = user?.Permission || user?.permission || [];
+  const permissions = Array.isArray(permissionsClaim) ? permissionsClaim : [permissionsClaim];
+
+  const canCreate = isAdmin || permissions.includes("Structure.Site.Create");
+  const canEdit = isAdmin || permissions.includes("Structure.Site.Edit");
+  const canDelete = isAdmin || permissions.includes("Structure.Site.Delete");
 
   const res = await fetchWithAuth("/api/sites", { cache: 'no-store' });
   const sites = res.ok ? await res.json() : [];
@@ -38,7 +40,7 @@ export default async function SitesAdminPage() {
           </Link>
         </header>
 
-        {/* Add New Site Form */}
+        {canCreate && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-6">
           <div className="shrink-0 bg-emerald-100 text-emerald-600 p-4 rounded-2xl">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -57,6 +59,7 @@ export default async function SitesAdminPage() {
             </form>
           </div>
         </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sites.map((site: any) => (
@@ -69,13 +72,16 @@ export default async function SitesAdminPage() {
                         {site.address || "No physical address bound"}
                     </p>
                 </div>
+                {canDelete && (
                 <form action={deleteSiteAction.bind(null, site.id)}>
                    <button type="submit" className="text-gray-400 hover:text-rose-600 font-bold p-2 bg-white hover:bg-rose-50 rounded-lg text-sm border border-transparent hover:border-rose-100 transition-colors shadow-sm" title="Delete Site">
                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                    </button>
                 </form>
+                )}
               </div>
               
+              {canEdit && (
               <div className="px-6 py-5 bg-white border-t border-gray-50 flex-1 flex flex-col justify-end">
                 <form action={updateSiteAction} className="flex flex-col gap-3">
                   <input type="hidden" name="id" value={site.id} />
@@ -91,6 +97,7 @@ export default async function SitesAdminPage() {
                   </div>
                 </form>
               </div>
+              )}
             </div>
           ))}
         </div>

@@ -38,14 +38,43 @@ namespace IntranetPortal.Api.Controllers
                 }
             }
 
+            // Force Entity Framework to structurally lock the new Sites into MySQL right now so we can extract their auto-incremented Identity keys physically.
+            if (sitesAdded > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            // Determine the explicit Localized Sequence explicitly for Departments.
+            int? targetSiteId = null;
+            string firstDtoSite = dto.Sites?.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim();
+            
+            if (!string.IsNullOrEmpty(firstDtoSite))
+            {
+                targetSiteId = await _context.Sites.Where(x => x.Name.ToLower() == firstDtoSite.ToLower()).Select(x => x.Id).FirstOrDefaultAsync();
+            }
+            
+            if (targetSiteId == null || targetSiteId == 0)
+            {
+                // Fallback to the very first global site natively if the user didn't specify one in the bulk payload explicitly.
+                targetSiteId = await _context.Sites.Select(x => x.Id).FirstOrDefaultAsync();
+            }
+
+            if (targetSiteId == null || targetSiteId == 0)
+            {
+                if (dto.Departments != null && dto.Departments.Where(x => !string.IsNullOrWhiteSpace(x)).Any())
+                {
+                    return BadRequest("A physical Site must be established before Departments can be mapped onto the corporate matrix.");
+                }
+            }
+
             // 2. Process Departments
-            if (dto.Departments != null)
+            if (dto.Departments != null && targetSiteId.HasValue && targetSiteId.Value > 0)
             {
                 foreach (var d in dto.Departments.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()))
                 {
                     if (!await _context.Departments.AnyAsync(x => x.Name.ToLower() == d.ToLower()))
                     {
-                        _context.Departments.Add(new Department { Name = d });
+                        _context.Departments.Add(new Department { Name = d, SiteId = targetSiteId.Value });
                         deptsAdded++;
                     }
                 }

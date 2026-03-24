@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IntranetPortal.Data.Data;
 using IntranetPortal.Data.Models;
+using IntranetPortal.Api.Security;
 
 namespace IntranetPortal.Api.Controllers
 {
@@ -25,13 +26,9 @@ namespace IntranetPortal.Api.Controllers
         [Authorize(Policy = "Perm:HR.Employee.View")]
         public async Task<IActionResult> GetEmployees()
         {
-            var query = _context.Employees.AsQueryable();
-
-            if (!_permissionService.IsGlobal("HR.Employee.View"))
-            {
-                var allowedSites = _permissionService.GetAllowedSites("HR.Employee.View");
-                query = query.Where(e => allowedSites.Contains(e.SiteId));
-            }
+            var query = _context.Employees
+                .AsQueryable()
+                .ApplySiteScope(_permissionService, "HR.Employee.View");
 
             var employees = await query
                 .Include(e => e.Position)
@@ -63,13 +60,9 @@ namespace IntranetPortal.Api.Controllers
         [Authorize(Policy = "Perm:HR.Employee.View")]
         public async Task<IActionResult> GetEmployee(int id)
         {
-            var query = _context.Employees.AsQueryable();
-
-            if (!_permissionService.IsGlobal("HR.Employee.View"))
-            {
-                var allowedSites = _permissionService.GetAllowedSites("HR.Employee.View");
-                query = query.Where(e => allowedSites.Contains(e.SiteId));
-            }
+            var query = _context.Employees
+                .AsQueryable()
+                .ApplySiteScope(_permissionService, "HR.Employee.View");
 
             var employee = await query
                 .Where(e => e.Id == id)
@@ -87,8 +80,7 @@ namespace IntranetPortal.Api.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (!_permissionService.HasSitePermission("HR.Employee.Create", dto.SiteId))
-                return Forbid();
+            if (!_permissionService.ValidateSiteScope("HR.Employee.Create", dto.SiteId)) return Forbid();
 
             var employee = new Employee
             {
@@ -117,10 +109,10 @@ namespace IntranetPortal.Api.Controllers
             if (employee == null) return NotFound();
 
             // Verify permission on existing Site
-            if (!_permissionService.HasSitePermission("HR.Employee.Edit", employee.SiteId)) return Forbid();
+            if (!_permissionService.ValidateSiteScope("HR.Employee.Edit", employee.SiteId)) return Forbid();
             
             // Verify permission on NEW target Site (if moving employee across branches)
-            if (dto.SiteId != employee.SiteId && !_permissionService.HasSitePermission("HR.Employee.Edit", dto.SiteId)) return Forbid();
+            if (dto.SiteId != employee.SiteId && !_permissionService.ValidateSiteScope("HR.Employee.Edit", dto.SiteId)) return Forbid();
 
             employee.FullName = dto.FullName;
             employee.Email = dto.Email;
@@ -141,7 +133,7 @@ namespace IntranetPortal.Api.Controllers
             var employee = await _context.Employees.FindAsync(id);
             if (employee == null) return NotFound();
 
-            if (!_permissionService.HasSitePermission("HR.Employee.Edit", employee.SiteId)) return Forbid();
+            if (!_permissionService.ValidateSiteScope("HR.Employee.Edit", employee.SiteId)) return Forbid();
 
             _context.Employees.Remove(employee);
             await _context.SaveChangesAsync();

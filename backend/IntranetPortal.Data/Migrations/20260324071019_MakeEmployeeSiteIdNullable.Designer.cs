@@ -4,6 +4,7 @@ using IntranetPortal.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntranetPortal.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260324071019_MakeEmployeeSiteIdNullable")]
+    partial class MakeEmployeeSiteIdNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -71,7 +74,7 @@ namespace IntranetPortal.Data.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("SiteId")
+                    b.Property<int?>("SiteId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -103,7 +106,7 @@ namespace IntranetPortal.Data.Migrations
                     b.Property<int?>("PositionId")
                         .HasColumnType("int");
 
-                    b.Property<int>("SiteId")
+                    b.Property<int?>("SiteId")
                         .HasColumnType("int");
 
                     b.Property<int?>("TeamId")
@@ -333,9 +336,7 @@ namespace IntranetPortal.Data.Migrations
                 {
                     b.HasOne("IntranetPortal.Data.Models.Site", "Site")
                         .WithMany()
-                        .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SiteId");
 
                     b.Navigation("Site");
                 });
@@ -354,9 +355,7 @@ namespace IntranetPortal.Data.Migrations
 
                     b.HasOne("IntranetPortal.Data.Models.Site", "Site")
                         .WithMany("Employees")
-                        .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SiteId");
 
                     b.HasOne("IntranetPortal.Data.Models.Team", "Team")
                         .WithMany("Employees")

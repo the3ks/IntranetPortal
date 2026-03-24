@@ -61,13 +61,17 @@ export default async function NewEmployeePage() {
                 <label className="text-sm font-bold text-gray-700">Sub-Team / Channel</label>
                 <select name="teamId" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white shadow-sm appearance-none">
                   <option value="">No Active Channel Assignment...</option>
-                  {depts.map((d: any) => (
-                    <optgroup key={d.id} label={d.name}>
-                      {teams.filter((t: any) => t.departmentId === d.id).map((t: any) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </optgroup>
-                  ))}
+                  {depts.map((d: any) => {
+                    const deptTeams = teams.filter((t: any) => t.departmentId === d.id);
+                    if (deptTeams.length === 0) return null;
+                    return (
+                      <optgroup key={d.id} label={d.name}>
+                        {deptTeams.map((t: any) => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </optgroup>
+                    );
+                  })}
                 </select>
               </div>
               <div className="space-y-2">

@@ -15,7 +15,7 @@ export async function createSiteAction(formData: FormData) {
   });
 
   if (res.ok) {
-    revalidatePath("/admin/sites");
+    revalidatePath("/sites");
     revalidatePath("/employees/new");
     revalidatePath("/employees/[id]/edit");
   } else {
@@ -37,7 +37,7 @@ export async function updateSiteAction(formData: FormData) {
   });
 
   if (res.ok) {
-    revalidatePath("/admin/sites");
+    revalidatePath("/sites");
     revalidatePath("/employees");
   } else {
     throw new Error("Failed to update site");

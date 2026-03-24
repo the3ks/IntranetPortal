@@ -87,7 +87,12 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<IntranetPortal.Data.Data.ApplicationDbContext>();
     var globalAdminHash = BCrypt.Net.BCrypt.HashPassword("Admin123!");
+    
+    // 1. First establish God-mode and Roles
     await IntranetPortal.Data.Data.DatabaseSeeder.InitializeAsync(context, globalAdminHash);
+    
+    // 2. Dynamically scrape all endpoints to pull custom Developer Capabilities seamlessly
+    await IntranetPortal.Api.Security.PermissionScanner.SyncPoliciesAsync(context, typeof(Program).Assembly);
 }
 
 app.Run();
