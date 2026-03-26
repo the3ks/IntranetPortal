@@ -13,6 +13,7 @@ export async function createEmployeeAction(formData: FormData) {
     departmentId: parseInt(formData.get("departmentId") as string),
     teamId: teamStr ? parseInt(teamStr) : null,
     siteId: parseInt(formData.get("siteId") as string),
+    allowLogin: formData.get("allowLogin") !== null,
   };
 
   const res = await fetchWithAuth("/api/employees", {
@@ -40,6 +41,7 @@ export async function updateEmployeeAction(formData: FormData) {
     departmentId: parseInt(formData.get("departmentId") as string),
     teamId: teamStr ? parseInt(teamStr) : null,
     siteId: parseInt(formData.get("siteId") as string),
+    allowLogin: formData.get("allowLogin") !== null,
   };
 
   const res = await fetchWithAuth(`/api/employees/${id}`, {

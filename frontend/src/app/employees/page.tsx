@@ -8,7 +8,7 @@ interface Employee {
   id: number;
   fullName: string;
   email: string;
-  jobTitle: string;
+  positionName: string;
   departmentId: number;
   departmentName: string;
   teamId: number | null;
@@ -17,7 +17,12 @@ interface Employee {
   siteName: string;
 }
 
-export default async function EmployeesPage() {
+import SiteFilter from "@/components/ui/SiteFilter";
+import SearchFilter from "@/components/SearchFilter";
+
+export default async function EmployeesPage({ searchParams }: { searchParams: Promise<{ siteId?: string, search?: string }> }) {
+  const { siteId, search } = await searchParams;
+  
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value || "";
   let user: any = null;
@@ -37,35 +42,56 @@ export default async function EmployeesPage() {
 
   const canCreate = isAdmin || permissions.includes("HR.Employee.Create");
 
-  const hasSitePermission = (permission: string, siteId: number) => {
+  const hasSitePermission = (permission: string, targetSiteId: number) => {
     if (isAdmin) return true;
     if (scopedPerms.includes(`${permission}:Global`)) return true;
-    return scopedPerms.includes(`${permission}:${siteId}`);
+    return scopedPerms.includes(`${permission}:${targetSiteId}`);
   };
 
-  const res = await fetchWithAuth("/api/employees", { cache: 'no-store' });
-  let employees: Employee[] = [];
+  const [res, siteRes] = await Promise.all([
+    fetchWithAuth(`/api/employees?search=${search ? encodeURIComponent(search) : ''}`, { cache: 'no-store' }),
+    fetchWithAuth("/api/sites", { cache: 'no-store' })
+  ]);
   
-  if (res.ok) {
-    employees = await res.json();
+  let employees: Employee[] = [];
+  let allSites: any[] = [];
+  
+  if (res.ok) employees = await res.json();
+  if (siteRes.ok) allSites = await siteRes.json();
+
+  if (siteId) {
+    employees = employees.filter(e => e.siteId.toString() === siteId);
   }
+
+  const permittedSites = allSites.filter(s => hasSitePermission("HR.Employee.View", s.id));
+  const filterDisabled = !isAdmin && permittedSites.length <= 1 && !scopedPerms.includes("HR.Employee.View:Global");
 
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto space-y-8 py-6">
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
           <div>
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Employees</h1>
-            <p className="text-gray-500 mt-2 text-lg">Manage personnel, organizational structures, and location assignments safely.</p>
+            <p className="text-gray-500 mt-2 text-base">Manage personnel, organizational structures, and location assignments safely.</p>
           </div>
-          {canCreate && (
-            <Link href="/employees/new" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-100">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add New Employee
-            </Link>
-          )}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+            <div className="pt-4 sm:pt-0 sm:pr-6 w-full sm:w-auto">
+              <SearchFilter placeholder="Search personnel by name or email..." />
+            </div>
+            <div className="pt-4 sm:pt-0 sm:px-6 w-full sm:w-auto">
+              <SiteFilter sites={permittedSites} currentSiteId={siteId} disabled={filterDisabled} />
+            </div>
+            {canCreate && (
+              <div className="pt-4 sm:pt-0 sm:pl-6">
+                <Link href="/employees/new" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-100 whitespace-nowrap">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add New Employee
+                </Link>
+              </div>
+            )}
+          </div>
         </header>
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
@@ -100,7 +126,7 @@ export default async function EmployeesPage() {
                           </div>
                           <div>
                             <div className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{emp.fullName}</div>
-                            <div className="text-sm font-medium text-gray-500 mt-1">{emp.jobTitle || 'No Title'} <span className="mx-2 text-gray-300">•</span> {emp.email}</div>
+                            <div className="text-sm font-medium text-gray-500 mt-1">{emp.positionName || 'No Title'} <span className="mx-2 text-gray-300">•</span> {emp.email}</div>
                           </div>
                         </div>
                       </td>

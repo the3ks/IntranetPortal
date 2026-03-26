@@ -9,7 +9,9 @@ export const metadata = {
 
 import { cookies } from "next/headers";
 
-export default async function DepartmentsPage() {
+export default async function DepartmentsPage({ searchParams }: { searchParams: Promise<{ siteId?: string }> }) {
+  const { siteId } = await searchParams;
+
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value || "";
   let user: any = null;
@@ -24,9 +26,18 @@ export default async function DepartmentsPage() {
   const permissionsClaim = user?.Permission || user?.permission || [];
   const permissions = Array.isArray(permissionsClaim) ? permissionsClaim : [permissionsClaim];
 
+  const scopedPermsClaim = user?.ScopedPerm || user?.scopedperm || [];
+  const scopedPerms = Array.isArray(scopedPermsClaim) ? scopedPermsClaim : [scopedPermsClaim];
+
   const canCreate = isAdmin || permissions.includes("Structure.Department.Create");
   const canEdit = isAdmin || permissions.includes("Structure.Department.Edit");
   const canDelete = isAdmin || permissions.includes("Structure.Department.Delete");
+
+  const hasSitePermission = (permission: string, targetSiteId: number) => {
+    if (isAdmin) return true;
+    if (scopedPerms.includes(`${permission}:Global`)) return true;
+    return scopedPerms.includes(`${permission}:${targetSiteId}`);
+  };
 
   let departments: Department[] = [];
   let sites: any[] = [];
@@ -43,6 +54,13 @@ export default async function DepartmentsPage() {
     console.error("Error connecting to backend API:", error);
   }
 
+  if (siteId) {
+    departments = departments.filter(d => d.siteId?.toString() === siteId);
+  }
+
+  const permittedSites = sites.filter(s => hasSitePermission("Structure.Department.View", s.id));
+  const filterDisabled = !isAdmin && permittedSites.length <= 1 && !scopedPerms.includes("Structure.Department.View:Global");
+
   return (
     <MainLayout>
       <DepartmentManager 
@@ -51,6 +69,9 @@ export default async function DepartmentsPage() {
           canCreate={canCreate} 
           canEdit={canEdit} 
           canDelete={canDelete} 
+          permittedSites={permittedSites}
+          currentSiteId={siteId}
+          filterDisabled={filterDisabled}
       />
     </MainLayout>
   );

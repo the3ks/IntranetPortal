@@ -21,3 +21,23 @@ export async function submitQuickSetupAction(payload: any) {
     return JSON.stringify({ success: false, error: error.message });
   }
 }
+
+export async function importEmployeesCsvAction(formData: FormData) {
+  try {
+    const res = await fetchWithAuth("/api/setup/import-employees", {
+      method: "POST",
+      body: formData
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return JSON.stringify({ success: true, data });
+    } else {
+      let errStr = "Failed API call";
+      try { errStr = await res.text(); } catch {}
+      return JSON.stringify({ success: false, error: errStr });
+    }
+  } catch (error: any) {
+    return JSON.stringify({ success: false, error: error.message });
+  }
+}

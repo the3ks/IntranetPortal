@@ -1,255 +1,131 @@
-# Intranet Portal Web App Plan
+# Implementation Plan: Multi-Tenant RBAC Site Isolation
 
-Building a mobile-friendly progressive web internal portal using ASP.NET Core Web API, MySQL, and Next.js PWA.
+The current capability matrix authorizes users globally (e.g., if a manager has `Announcements.View`, they can view all announcements across the entire organization). The objective is to rigidly bind entities to physical `SiteIds` and rewire the capabilities engine so users can only manipulate resources inside their specifically authorized Sites.
 
-## Approved Plan Features
-- **Database Name**: `IntranetPortal`
-- **Design System**: Tailwind CSS
-- **Core Models**: `Employees`, `Departments`, `Announcements`, and `Locations` (to represent office, factory, warehouse, etc.).
+## Proposed Changes
 
-## Proposed Architecture
+### 1. Schema Expansion
+**Goal:** Guarantee every structural element traces back to a geographic boundary.
+#### [MODIFY] `IntranetPortal.Data/Models/Employee.cs`
+- Retain existing `int SiteId` mapping.
 
-We will structure the repository inside `d:/DEV/IntranetPortal` into two main directories: `backend` and `frontend`.
+#### [MODIFY] `IntranetPortal.Data/Models/Department.cs`
+- Introduce `int? SiteId { get; set; }` to support globally shared departments vs isolated site departments.
+- Add `public Site? Site { get; set; }` foreign key.
 
-### `backend/` - ASP.NET Core Web API
-We will create a RESTful API to serve data to the frontend.
-- **Framework**: `dotnet new webapi -n IntranetPortal.Api`
-- **Database Access**: We will use Entity Framework Core (`Pomelo.EntityFrameworkCore.MySql`) for MySQL integration.
-- **Authentication**: Set up basic CORS to allow the frontend to communicate with the API.
+#### [MODIFY] `IntranetPortal.Data/Models/Announcement.cs`
+- Introduce `int? SiteId { get; set; }` allowing announcements to target a specific corporate building or blast globally (`null`).
+- Add `public Site? Site { get; set; }` foreign key.
 
-### `frontend/` - Next.js PWA
-We will create a Next.js application that can be installed on mobile devices.
-- **Framework**: `npx create-next-app@latest frontend --ts --tailwind --eslint --app --src-dir --import-alias "@/*"`
-- **PWA Capabilities**: Install the `next-pwa` plugin to generate a Web App Manifest and Service Workers, allowing employees to "Install App" to their home screens.
-- **UI Architecture**: A responsive layout featuring a sidebar navigation for desktop browsers, which collapses into a hamburger menu or bottom-tab bar on mobile devices.
+#### [NEW] Database Migration
+- Add standard Entity Framework migrations (`dotnet ef migrations add AddSiteIdScopeLimits`) to inject `SiteId` into both the `Departments` and `Announcements` primary SQL tables.
+- Run `dotnet ef database update`.
 
-### Database: MySQL
-We will design a simple initial schema suitable for an internal portal (e.g., `Users` or `Tasks` tables) to demonstrate the connection between the Next.js frontend, ASP.NET backend, and MySQL database.
+### 2. Authorization Engine Refactor
+**Goal:** `[Authorize(Policy="...")]` acts as a global entry gate. True multi-tenant verification must filter horizontally at the database level!
+#### [MODIFY] `IntranetPortal.Api/Security/PermissionService.cs`
+- Inject a core helper method to extract native bounded scopes: `Task<List<int?>> GetAuthorizedSitesForCapabilityAsync(int userId, string permission)`.
+- A returned `null` inside the list means the user holds Global Scope (`System.FullAccess` or a Role spanning all sites).
+- If the list contains specific integers like `[2, 4]`, the user's authority strictly ends there.
+
+### 3. API Controller Hardening
+**Goal:** Map the PermissionService scopes directly into the EF Core `IQueryable` loops natively!
+#### [MODIFY] `AnnouncementsController.cs`, `EmployeesController.cs`, `DepartmentsController.cs`
+- **GET (Read Scopes):** Intercept the `IQueryable`. Sweep the user's token scopes, and dynamically append `.Where(x => allowedSites.Contains(null) || allowedSites.Contains(x.SiteId))` directly into the SQL response!
+- **POST/PUT/DELETE (Write Mutations):** Before modifying or injecting an entity into the database, forcefully crash the pipeline with an `HTTP 403 Forbidden` if the manager targets a `SiteId` they don't explicitly own.
+
+## User Review Required
+> [!WARNING]
+> This is a deep structural shift. It will perfectly isolate Tokyo managers from accidentally modifying London documents! Does this Multi-Tenant horizontal architecture align precisely with your vision before I execute these schemas?
+
+---
+
+# Implementation Plan: Rapid Bulk CSV Employee Importer
+
+## Goal
+Implement a single-click CSV bulk injection utility within the **Quick Setup** interface allowing enterprise managers to mass-deploy employees. The system will aggressively evaluate the CSV columns and mathematically auto-generate any missing underlying structures (Sites, Departments, Teams, Positions) on the fly!
+
+## Proposed Changes
+
+### 1. Backend CSV Auto-Generation Engine
+#### [MODIFY] `IntranetPortal.Api/Controllers/SetupController.cs`
+- Expose a new REST API endpoint: `[HttpPost("import-employees")]`.
+- The endpoint will natively accept an `IFormFile` (the uploaded `.csv` document).
+- **Format Expected:** `FullName, Email, JobTitle, Department, SubTeam, SiteName`.
+- **Intelligent Matrix Mapping:** For every single row, the backend will sequentially query the database:
+  - Find or Create the `Site`
+  - Find or Create the `Department` physically locked to that `SiteId`.
+  - Find or Create the `Team` locked to that `DepartmentId`.
+  - Find or Create the `Position`.
+  - Validate Employee isolation bounds and mass-insert the new `Employee` natively!
+
+### 2. Frontend "Rapid Config" GUI
+#### [MODIFY] `frontend/src/app/admin/quick-setup/QuickSetupForm.tsx` (OR parallel component)
+- Construct an isolated, aesthetically distinct **"Batch Employee Importer (CSV)"** Dropzone/Button below the dictionary textareas.
+- Integrate a hidden `<input type="file" accept=".csv">` mapped securely to a Next.js `FormData` HTTP fetch router pushing natively straight to the C# endpoint.
+- Provide a downloadable "CSV Template" string helper natively so administrators understand the exact column arrays globally expected.
 
 ## Verification Plan
-
-### Automated Tests
-- Run `dotnet build` and `dotnet run` on the API to verify it compiles and runs locally.
-- Run `npm run lint` and `npm run dev` on the frontend to ensure no build errors exist.
-- Verify Swagger UI is accessible from the browser.
-
-### Manual Verification
-- We will instruct you how to test the PWA installation in your browser (e.g., using Google Chrome to click "Install App").
-- We will verify that data flows correctly from the MySQL database, through the ASP.NET API, and appears beautifully on the Next.js frontend.
+1. Fabricate a diverse CSV payload mathematically spanning overlapping Sites and missing Departments.
+2. Submit the CSV through the frontend application UI.
+3. Refresh the `/employees` screen to visually verify the Employees natively span their independent Geographic nodes gracefully.
 
 ---
 
-## Phase 2: Authentication & RBAC Integration
+# Implementation Plan: Dynamic Geographic Scoping Filters
 
-We will transition the static UI into a fully secure system.
+## Goal
+Because global administrators (or Multi-Site Managers) can view employees seamlessly spanning 10 locations, both the `/employees` and `/departments` frontend UI panels must dynamically inject an explicit "Site Switcher" dropdown. 
 
-### Backend (ASP.NET Core Web API)
-- **Token System**: Integrate JWT (JSON Web Token) Bearer Authentication.
-- **Identity Model**: Extend the current `Employee` model to include security fields (e.g., `PasswordHash`, `Role`) so employees can log in using their email.
-- **Endpoints**: Create an `AuthController` exposing `/api/auth/login`. Protect existing and future endpoints using `[Authorize(Roles = "Admin, Staff")]`.
+The filter strictly enforces Next.js UX Standards:
+1. **Dynamic Options:** The dropdown maps exclusively to the Sites the active User mathematically possesses permissions for via their JWT.
+2. **Locked State UX:** If a user only possesses explicit permission for 1 physical Site, the dropdown aggressively locks (disables) mitigating any navigation confusion natively.
+3. **Server-Side Interpolation:** Switching sites automatically injects a Next.js `?siteId=X` search parameter seamlessly into the URL Router, preserving the pure Server-Component rendering loop natively.
 
-### Frontend (Next.js)
-- **Session Management**: Implement a lightweight custom JWT Cookie strategy. This gives maximum flexibility for deeply integrating with .NET APIs without the forced opinions of heavy external libraries.
-- **UI Components**: Build a stunning, corporate-style `/login` page completely separate from the dashboard layer.
-- **Route Protection**: Use Next.js Edge Middleware to automatically redirect unauthenticated users trying to access `/` back to `/login`.
-- **Dynamic RBAC**: Update `Sidebar.tsx` and `page.tsx` to read the user's role from the decoded token and conditionally render Admin-only features.
+## Proposed Frontend Pipeline Changes
 
-## Approved Authentication Architecture
-- **Identity Model**: Separate `UserAccount` table mapped to `Employee`.
-- **Frontend Session**: Custom, lightweight JWT cookie implementation (no external JS libraries).
+#### [MODIFY] `src/app/employees/page.tsx`
+- Refactor the Server Component `EmployeesPage({ searchParams })` to natively extract the `?siteId=` URL parameter synchronously.
+- Loop across the extracted `Site` database arrays generating an isolated `<select>` dropdown interactively mapped to `router.push("?siteId=X")`.
+- Measure the lengths of explicitly authorized sites derived natively from `user.ScopedPerm`: If length is exactly 1, rigidly inject the `disabled` property onto the `<select>` node securely.
+- Structurally filter the `employees.filter()` array rendering completely organically based on the active `siteId` switch.
 
----
-
-## Phase 3: Enterprise Permission Matrix (Advanced RBAC)
-
-Since the system will scale across multiple isolated modules (HR, Purchase, Assets Management), the current single `Role` string on the `UserAccount` is functionally insufficient. We must architect a granular Permission system *before* building the modules to prevent severe technical debt.
-
-### 1. Database Design Evolution (Site-Scoped Roles)
-To support managers overseeing specific locations vs global bosses, we will create a **Resource-Scoped Permission Model**. By adding an optional `SiteId` boundary directly to a user's role assignment, we achieve perfect hierarchical scaling.
-- **`Roles` Table**: Defines organizational hats (e.g., "HR Manager", "Purchasing Agent").
-- **`Permissions` Table**: Defines exact actions (e.g., `HR.Employee.Edit`, `Purchase.Invoice.Approve`).
-- **`RolePermissions`**: Maps specific permissions to a role.
-- **`UserRoles`**: Maps a `UserAccount` to an organizational Role with an optional **`SiteId`** constraint.
-  *(Example: Alice is assigned `HR Manager` for `SiteId = 1`. Bob is assigned `HR Manager` with `SiteId = NULL`, granting him global HR authority across all sites).*
-
-### 2. API Security (ASP.NET Core Policies)
-We will replace the basic `[Authorize(Roles="Admin")]` with dynamic ASP.NET Core Policy-Based Authorization:
-- Create a custom `IAuthorizationHandler` or Middleware that intercepts API requests and verifies the user's granular matrix permissions.
-- Controller endpoints will be protected dynamically like: `[HasPermission("Assets.Management.Write")]`.
-
-### 3. Frontend Dynamic UI
-The simplistic `isAdmin` boolean currently acting as a UI toggle will be upgraded into a robust React wrapper such as `<RequirePermission capability="Purchase.View">`. This ensures the Sidebar and Route Middleware dynamically hide/show modules matching their precise database rights.
+#### [MODIFY] `src/app/departments/page.tsx`
+- Duplicate the precise dropdown UI standard mechanically across the structural Departments grid identically enforcing identical mathematical JWT isolation matrices.
 
 ---
 
-## Phase 4: Employee Management Module
-With the authentication matrix capable of handling location-based scopes, we will now construct the focal Employee operational module.
+# Implementation Plan: Hybrid Access Management & Roles Panel
 
-### 1. Backend REST API
-- **`EmployeesController.cs`**: Implement foundational `GET`, `POST`, `PUT`, `DELETE` routes. Queries will eagerly `.Include()` referenced Database tables to return complete graphical views (e.g. returning the literal name "New York Office" instead of just `SiteId: 1`).
-- **`SitesController.cs` & `DepartmentsController.cs`**: Implement read-only `GET` endpoints to seamlessly provision data arrays for frontend `<select>` dropdown fields.
-- **Security Check**: Enforce generic `[Authorize]` JWT validation across endpoints instantly preventing unauthenticated access. 
+## Objective
+Merge Automated Account Provisioning with strict Role Access segregation natively.
+1. **Provisioning:** When an Employee is created (via UI or CSV), an `Allow Login` flag (default: Yes) immediately creates a baseline `UserAccount` granting "Basic Access" (no explicitly elevated Security Roles).
+2. **Access Security Dashboard:** A dedicated `/admin/users` UI strictly manages these accounts securely.
+3. **Smart Matrix Filtering:** The Access Panel splits users natively via a structural UI Filter separating "Basic Staff" (default access only) from "Elevated Rights" (assigned specific multi-tenant `[UserRoles]`).
 
-### 2. Frontend Next.js Interface
-- **Data Table Application (`/employees`)**: Construct a beautifully modernized, responsive dataset UI utilizing Next.js server components to render employees graphically alongside dynamic Badges denoting their Department and Location assignments.
-- **Creation Routing (`/employees/new`)**: Build a dedicated application sub-page featuring a highly polished submission interface. It will autonomously ping the Backend API reference routes to populate its Site/Department dropdown boxes dynamically.
-- **Authenticated Fetching**: Engineer a Next.js Server-Component utility that safely extracts the Secure HTTP-only JWT Cookie session and attaches it natively into API Header bearer queries, guaranteeing rapid data resolution.
+## Proposed Changes
 
----
+### 1. Account Auto-Provisioning & CSV Injection
+**Goal:** Mathematically generate Security Accounts transparently during HR creation.
+#### [MODIFY] `EmployeesController.cs` & `SetupController.cs`
+- Add an `AllowLogin` boolean explicitly mapped to incoming UI payloads and the CSV Parser Native Engine.
+- If `AllowLogin == true`, explicitly hash a default standard password and inject a `UserAccount` bound perfectly to the new `EmployeeId`.
 
-## Phase 5: Organizational Architecture & Security Management
-The user rightfully distinguished that an enterprise requires a physical separation between Security Roles (which govern data access limits) and HR Positions (which represent a staff member's real-life job title). 
+### 2. The Granular Security Dashboard (`/admin/users`)
+**Goal:** Build a flawless UI datagrid safely filtering and searching the structural User graph.
+#### [NEW] `frontend/src/app/admin/users/page.tsx`
+- Build the Users React Datagrid listing active `UserAccount` rows physically joined to `Employee.FullName`.
+- **Search Module:** Implement a text input `?search=` parameter mechanically filtering the `IQueryable` securely.
+- **Security Scope Filter:** Implement a dropdown safely filtering users:
+  - `Elevated Rights` (Default) -> Only shows Users possessing explicit Security Roles.
+  - `Basic Staff` -> Only shows Users carrying zero explicit Roles seamlessly.
+- **RBAC Assignment Modal:** Click "Manage Security Roles" to visually bind explicit Geographically-isolated `UserRoles` mathematically to an account!
 
-To accomplish this beautifully, we will introduce a formal Administration interface.
+### 3. Employee Grid Search Index
+**Goal:** Scale the text-search search box natively to the primary HR datagrid organically.
+#### [MODIFY] `frontend/src/app/employees/page.tsx`
+- Intercept Next.js query parameters injecting a `?search=` URL text router physically interpolating the string directly against the backend EF Core `Employees` stream!
 
-### 1. Database Schema Evolution
-- **Create `Position.cs`**: A new relational table storing corporate job titles (e.g. `Id`, `Name`, `Description`).
-- **Refactor `Employee.cs`**: Replace the primitive `string? JobTitle` field with a strongly-typed `int? PositionId` foreign key.
-- Execute an **Entity Framework Migration** to construct the SQL framework without data loss.
-
-### 2. Backend REST API Expansion
-- **`PositionsController.cs`**: Develop generic CRUD endpoints (`GET/POST/PUT/DELETE`) allowing HR managers to manage official job titles. 
-- **`RolesController.cs`**: Develop a sophisticated administration endpoint fetching the full list of `Roles` and their nested `RolePermissions`, allowing administrators to construct brand-new system capabilities. 
-- **Employee Endpoints Update**: Modify `EmployeesController.cs` to `.Include(e => e.Position)`.
-
-### 3. Frontend Next.js Interface
-- **Administration Suite (`/admin/positions` & `/admin/roles`)**: Build two dedicated Administrator data tables. 
-  - The *Positions* view will let HR dynamically add new structural corporate titles. 
-  - The *Roles* view will physically visualize the complex matrices binding permissions together.
-- **Refactor Employee Onboarding (`/employees/new`)**: Remove the plain text `jobTitle` input and replace it with a dynamically-populated `<select>` dropdown sourcing from the `/api/positions` endpoint.
-
----
-
-## Phase 6: Rapid Infrastructure Setup Utility
-To drastically accelerate initial deployment timelines, we will construct a dedicated bulk-entry interface empowering administrators to literally copy-paste text arrays of dictionaries directly into the databases.
-
-### 1. Backend Bulk UPSERT Endpoint
-- **`SetupController.cs`**: Implement a new `[HttpPost("quick-setup")]` secure route ingesting a `QuickSetupDto` formatted with standard structural string arrays. It will iteratively perform efficient EF Core `.AnyAsync()` existence checks before securely bulk inserting any missing entities.
-
-### 2. Frontend Next.js Administrator Utility
-- **`/admin/quick-setup` Form**: Build an elegant Administration UI rendering four multi-line `textarea` domains simultaneously. The `Sites` block will be logically hardcoded to default to "1 Head Office".
-- **Action Execution Logic**: A dedicated Next.js UI parser will autonomously intercept the form payload, slice the raw text by newline constraints (`\n`), purge trailing whitespace, and fire the compiled API packet synchronously.
-
----
-
-## Phase 9: Organizational Sub-Teams & Channels Matrix
-
-To support granular operational units like "B2B Sales" vs "Retail Sales" within the identical "Sales" Department, we must evolve the organizational data structures.
-
-### Proposed Architecture Options
-
-#### Option A: Dedicated `Team` Data Entity (Recommended for Trading & Services)
-- **Architecture**: Create a distinct `Team` (or `Channel`) SQL Table referencing a specific `DepartmentId`.
-- **Employee Record Update**: Overhaul the `Employee` model exposing a generic `TeamId` foreign key.
-- **Benefit**: Extremely fast relational querying and enables cross-positioning (e.g., an Accountant and a Sales Rep can both belong to a singular multidisciplinary "Channel Apollo").
-
-#### Option B: Recursive Hierarchical Departments
-- **Architecture**: Modify the `Department` model to allow an optional `ParentDepartmentId` pointing recursively to itself.
-- **Employee Record Update**: The employee simply belongs to a deeply nested department (e.g., assigning an employee to "B2B Outreach" instead of "Sales").
-- **Benefit**: Practically infinite depth, natively nesting structure, but forces complex backend SQL CTE operations to retrieve full divisional trees.
-
-### Implementation Plan
-1. **Database Expansion**: Create the `Team` model mapping back to `Department` securely via EF Core Migrations.
-2. **Backend API Overhaul**: Build `TeamsController` for CRUD operations and update `EmployeesController` to eagerly `.Include()` team definition strings on the Data payload.
-3. **UI Interlocks**: Add `Teams Administration` globally, and dynamically interlock dropdowns within `/employees/new` so that selecting "Sales" unlocks the respective Sub-Teams securely.
-
----
-
-## Phase 10: Unified Organizational Administration
-To efficiently process the creation and editing of classical sub-structures, we will implement a dedicated Administration application linking operations securely.
-
-### 1. Backend REST API Expansion
-- **`DepartmentsController.cs`**: Appending fully authenticated POST, PUT, DELETE endpoints enforcing `[Authorize(Policy = "Perm:Admin")]` logically.
-- **`TeamsController.cs`**: Appending comprehensive CRUD handlers processing the `DepartmentId` arrays accurately safely creating sub-teams natively.
-
-### 2. Frontend Next.js Graphical Dashboard
-- **`/admin/departments` Matrix**: Construct an elegant UI that loops directly through standard Departments, graphically opening inline drawers to instantly perform CRUD editing on child Teams transparently without full-page reloads!
-
----
-
-## Phase 11: Multi-Tenant RBAC Evolution
-To achieve enterprise multi-tenant scaling securely, we will implement Resource-Based Authorization enforcing localized Site scopes natively to prevent internal Privilege Escalation.
-
-### 1. Backend: Scoped Authorization Services
-- **`IPermissionService` Engine**: Build a lightweight native dependency that dynamically queries the database to verify if an animated user has Global (*Null SiteId*) access OR localized access to a `TargetSiteId`.
-- **Controller Hardening**: In operations like `UpdateEmployee`, inject the engine to execute: `await _permService.RequireSitePermissionAsync("HR.Employee.Edit", targetSiteId)`. If unauthorized, it natively throws a `403 Forbid`.
-- **SQL Query Masking**: Extend GET endpoints to automatically intercept dataset lookups, appending SQL `Where(e => ...)` clauses matching the user's allowed `SiteId` subset efficiently mapping multi-tenant boundaries.
-
-### 2. Frontend: Decoding Localized Scopes
-- **JWT Encoding**: Upgrade `AuthController` to serialize `ScopedPermissions` directly into the JWT token payload (e.g., `"HR.Employee.Edit:1"`, or `"HR.Employee.Edit:Global"`).
-- **Next.js UI Masking**: Upgrade application rendering architectures. `EmployeeTable` will parse exact localized contexts. If an Employee row belongs to Tokyo (Site 2) and the user only possesses `HR.Employee.Edit:1` (Singapore), the frontend will securely hide the interactive Edit/Delete buttons natively!
-
----
-
-## Phase 12: Global Sites Administration
-To successfully control the geographic Multi-Tenant array, we will deploy an administrative control panel dynamically managing the Company's Sites/Branches natively.
-
-### 1. Backend REST Endpoints
-- **`SitesController.cs`**: Expand the Controller to natively interpret POST, PUT, and DELETE HTTP commands authenticated aggressively under `[Authorize(Policy = "Perm:Admin")]`.
-- **EF Core Database Validation**: Ensure `Site.cs` safely drops into MySQL and that constraints are respected globally across the tenant mappings.
-
-### 2. Next.js Hub Configurations
-- **Server Actions Wiring**: Script `/actions/sites.ts` explicitly formatting immutable form data safely against the API matrix.
-- **Graphical Application**: Construct an immersive grid GUI inside `/admin/sites` natively utilizing premium standard Tailwind matrices capturing "Headquarters", "Operational Nodes", and localized structural data explicitly without full-page reloads.
-
----
-
-## Phase 13: Contextual App Launcher & Universal Portal OS
-As the Intranet expanded rapidly with Departments, Employees, and Sites functionality, the unified global sidebar suffered from cognitive overload. We successfully re-architected the frontend into a scalable "Application OS" paradigm.
-
-### 1. The App Grid (Homepage)
-- **Architecture**: Redesigned `src/app/page.tsx` into a modern App Launcher dropping the global sidebar out of view.
-- **Tiles**: Users are greeted with massive application tiles. The two primary engines are **The Hub** (grouping all standard employee data and documents) and **Administration** (grouping system settings and permission gating).
-
-### 2. Context-Aware Navigation
-- **`Sidebar.tsx` Refactor**: Implemented `usePathname()` logic to assess the active routing cluster. 
-- **Dynamic Gating**: When a user is inside The Hub, the Sidebar *exclusively* renders Corporate Directory structures and Knowledge Base menus. If a user clicks into the Administration app, the sidebar natively purges the directory data to render structural settings, resulting in infinite horizontal scalability.
-
-### 3. Department & Facilities Modular Realignment
-To safely respect the new The Hub context, organizational subsets structurally tied to Administration were explicitly released to global staff natively.
-- **Departments Integration**: Deployed `/departments` with an interactive CRUD interface and dynamic glassmorphic Tailwind modals.
-- **Sites Migration**: Successfully relocated the `/admin/sites` GUI natively to `/sites`. The **Corporate Directory** is now perfectly unified sequentially: `Employees`, `Departments`, and `Geographic Sites`.
-
----
-
-## Phase 14: Corporate Announcements Engine
-To fully activate **The Hub**, employees require a dedicated interface to broadcast and read internal news, policies, and updates.
-
-### 1. Backend REST API (`AnnouncementsController.cs`)
-- **GET All**: Retrieve announcements ordered by `CreatedAt` descending playfully including the `Author` object to display who posted it visually.
-- **POST/PUT/DELETE**: Restrict creation and mutations structurally using `[Authorize(Policy = "Perm:Admin")]` (or a dedicated `Communications` permission).
-
-### 2. Frontend Realization (`/announcements`)
-- **Server Component Fetching**: Fetch the data directly bypassing client-side loaders.
-- **Data UI**: Construct a visually stunning "News Feed" layout using Tailwind cards with rich typography and date formatting instead of a rigid data Grid.
-- **Sidebar Integration**: Wire the existing empty `Announcements` link in `Sidebar.tsx` dynamically to `/announcements`.
-
----
-
-## Phase 16: Multi-Tenant Horizontal Scoping
-To achieve true Multi-Tenant isolation, the backend MUST dynamically filter SQL arrays horizontally so that an HR Manager in Japan cannot view or modify Human Resource files stored in Canada.
-
-### 1. The Database Architecture
-- `Department.cs`, `Announcement.cs`, and `Employee.cs` receive `int? SiteId` properties. 
-- A Global resource has `SiteId = null`. A localized resource locks rigidly onto geographical branch IDs.
-
-### 2. Capabilities Extraction
-- `PermissionService` was expanded natively to extract exactly which Site bounds an actor possesses internally. 
-
-### 3. API Controller Traps
-- **POST/PUT/DELETE**: Modifying target arrays executes `_permissionService.ValidateSiteScope()`, which automatically throws an `HTTP 403 Forbidden` flag if unauthorized.
-- **GET**: Polling the database runs `query.ApplySiteScope()` automatically limiting `WHERE SiteId == ...` to intercept unauthorized row reads mathematically.
-
----
-
-## Phase 17: Structural Security Scaffolding (ISiteScoped)
-Because relying on future developers to remember to explicitly type the `Where(x => ...)` filters into their newly constructed API Controllers is a severe security vulnerability, we successfully implemented physical interfaces globally standardizing the logic.
-
-### 1. The Native Boundary
-- Forged `IntranetPortal.Data/Models/ISiteScoped.cs`.
-- Tagged `Employee`, `Department`, and `Announcement` mechanically.
-
-### 2. Explicit C# Extensions
-- Constructed `SiteScopeExtensions.cs`.
-- Deployed a heavily optimized Extension Method `ApplySiteScope(this IQueryable<T> ...)` and `.ValidateSiteScope(...)`.
-- This definitively guarantees rapid enterprise scalability natively across the pipeline while structurally bypassing the standard Entity Framework Core Global Query Filter blindspot.
+## User Review Required
+> [!IMPORTANT]
+> This restores the perfectly pristine mathematical separation between HR layers and RBAC capability arrays cleanly! You can provision software access separately from elevated Role Access flawlessly natively. Does this blueprint align precisely with your expectations?

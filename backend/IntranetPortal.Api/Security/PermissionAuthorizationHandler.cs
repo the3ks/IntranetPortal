@@ -28,7 +28,12 @@ namespace IntranetPortal.Api.Security
             if (context.User == null || context.User.Identity == null || !context.User.Identity.IsAuthenticated)
                 return;
 
-            var userIdString = context.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
+            var userIdString = context.User.Claims.FirstOrDefault(c => 
+                c.Type == System.Security.Claims.ClaimTypes.NameIdentifier || 
+                c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub || 
+                c.Type == "id" || 
+                c.Type == "sub")?.Value;
+
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
                 return;
 

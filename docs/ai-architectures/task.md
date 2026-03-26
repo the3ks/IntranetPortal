@@ -1,100 +1,79 @@
-# Intranet Portal Application Task List
+# Intranet Portal Development Roadmap
+*A comprehensive chronological ledger mapping the entire Multi-Tenant RBAC structure from inception to modern execution.*
 
-- [x] Project Setup & Architecture Planning
-  - [x] Define implementation plan
-  - [x] Request user review
-- [x] Backend Initialization (ASP.NET Core Web API)
-  - [x] Initialize ASP.NET Core Web API project
-  - [x] Set up MySQL connection (EF Core + Pomelo)
-  - [x] Set up basic authentication/CORS
-- [x] Frontend Initialization (Next.js PWA)
-  - [x] Initialize Next.js project
-  - [x] Configure PWA support (using next-pwa)
-  - [x] Set up basic responsive layout
-- [x] Core Features Implementation
-  - [x] Create basic internal portal UI (Sidebar, Header, Dashboard)
-- [x] Architecture Refactoring
-  - [x] Create IntranetPortal.Data class library
-  - [x] Move Models and DbContext into Data project
-  - [x] Update API project references and namespaces
-  - [x] Recreate EF Core Migrations
-- [/] Authentication & RBAC System
-  - [x] Backend: Configure JWT Authentication and Role schemas
-  - [/] Backend: Create Authentication Controller (Login API)
-  - [x] Frontend: Implement JWT Session Context / Middleware
-  - [x] Frontend: Build mobile-friendly Login Page (`/login`)
-  - [x] Frontend: Apply RBAC conditionals to Sidebar components
+## Phase 1. Project Initialization & Architecture
+- [x] Scaffold .NET 10 Web API Backend.
+- [x] Scaffold Next.js 16 App Router Frontend with Tailwind CSS.
 
-- [x] Enterprise Permissions Database Migration
-  - [x] Create `Role`, `Permission`, `RolePermission`, and `UserRole` Models
-  - [x] Update `UserAccount` and `DbContext` relationships
-  - [x] Apply Entity Framework Migrations
-  - [x] Update `AuthController` JWT emission logic to inject dynamic matrix permissions
+## Phase 2. Database Foundation (EF Core & MySQL)
+- [x] Integrate `Pomelo.EntityFrameworkCore.MySql` perfectly.
+- [x] Establish `ApplicationDbContext` and initial connection strings to MySQL.
+- [x] Deploy initial EF Core Migrations securely.
 
-- [x] Internal Documentation Hub (Wiki)
-  - [x] Install `react-markdown` and `typography` styling plugins
-  - [x] Build markdown file reader utility (`lib/docs.ts`)
-  - [x] Build `/docs` and `/docs/[slug]` UI routes
-  - [x] Integrate Wiki access into the Dashboard Sidebar
-  - [x] Generate sample architectural and setup wiki pages
+## Phase 3. Core Identity & RBAC Schema
+- [x] Design explicit `UserAccount`, `Role`, `Permission`, and `RolePermission` models.
+- [x] Design structural `Site` (Geographic Boundaries) and `UserRole` (Site-scoped Role binding) matrices.
 
-- [x] Phase 4: Employee Management Module
-  - [x] Build Backend API Endpoints (`Employees`, `Sites`, `Departments` controllers)
-  - [x] Engineer native Next.js JWT Server-Fetch secure utility
-  - [x] Construct Frontend `/employees` interactive Data Table UI
-  - [x] Construct Frontend `/employees/new` dynamic form UI
+## Phase 4. HR Organizational Matrix Schema
+- [x] Design foundational `Employee` model bridging exact HR requirements.
+- [x] Design structurally related organizational models: `Department`, `Team`, `Position`.
 
-- [x] Phase 5: Organizational Architecture & Administration
-  - [x] Implement `Position` EF Core Database Model & Migration
-  - [x] Refactor `Employee.JobTitle` primitive to `PositionId` relationship
-  - [x] Build Backend `Positions` and `Roles` API CRUD endpoints
-  - [x] Build Frontend `/admin/positions` Platform & UI
-  - [x] Build Frontend `/admin/roles` Platform & UI
-  - [x] Refactor Frontend `/employees/new` UI incorporating dynamic Position endpoints
+## Phase 5. Core Authentication & JWT Engine
+- [x] Implement `AuthController.cs` executing explicit `BCrypt` password hashes natively.
+- [x] Generate advanced JWTs encapsulating granular `ScopedPerm` claims mapping explicitly onto geographic sites reliably.
+- [x] Engineer Next.js API Middleware seamlessly to natively proxy standard JWT headers securely throughout the App Router.
 
-- [x] Phase 6: Rapid Infrastructure Setup Utility
-  - [x] Build `SetupController` backend Bulk UPSERT endpoint
-  - [x] Develop `/admin/quick-setup` Frontend TextArea submission utility
-  - [x] Implement line-splitting Server Actions payload processing
+## Phase 6. Global Site Management
+- [x] Build `SitesController.cs` for full geographic CRUD operations.
+- [x] Engineer interactive `/sites` management UI in Next.js dynamically listing active facilities.
 
-- [x] Phase 7: Dynamic Policy Authorization Engine
-  - [x] Refactor QuickSetup Payload to enforce Developer Constants
-  - [x] Seed EF Core Dictionary array natively inside DatabaseSeeder.cs
-  - [x] Architect ASP.NET `IAuthorizationRequirement` & `IAuthorizationHandler` capabilities
-  - [x] Initialize `builder.Services` Registry for Providers
-  - [x] Construct Read-Only `/api/permissions` endpoint
-  - [x] Develop Read-Only Next.js `/admin/permissions` GUI
+## Phase 7. Department & Team Infrastructure
+- [x] Build `DepartmentsController.cs` structurally tracking distinct unit relationships natively over SQL.
+- [x] Engineer `/departments` UI with natively nested Team cascading data matrices.
 
-- [x] Phase 8: Securing the HR Employee Module
-  - [x] Enforce ASP.NET Core Policies upon `EmployeesController`
-  - [x] Construct Backend API `PUT` and `DELETE` execution endpoints
-  - [x] Implement robust JWT Permission extraction locally in Next.js Server Components
-  - [x] Dynamically conditionally render Navigation Links natively mirroring security matrices
-  - [x] Program interactive `Edit` UI logic across `/employees` data tables
+## Phase 8. HR Position & Job Title Architecture
+- [x] Build `PositionsController.cs` for centralized job title schema definitions.
+- [x] Formulate UI module elegantly at `/admin/positions` securely restricting viewable changes to Admins natively.
 
-- [x] Phase 9: Organizational Sub-Teams & Channels
-  - [x] Construct `Team.cs` Entity mapped to `DepartmentId`
-  - [x] Update `Employee.cs` to execute optional `TeamId` foreign keys
-  - [x] Build EF Core Migrations natively reconstructing schemas safely
-  - [x] Provision `TeamsController` for backend REST API fetching
-  - [x] Expand Frontend Quick Setup / Forms to dynamically query Teams
+## Phase 9. Employee Lifecycle & Directory
+- [x] Build `EmployeesController.cs` rendering deep EF Core relational includes organically (`Position`, `Department`, `Team`, `Site`).
+- [x] Engineer `/employees` generic data grid identically tracking location dependencies gracefully via interactive UI tools.
+- [x] Build `/employees/new` generic interactive Creation form directly matching dependencies securely upon Next.js bindings natively.
 
-- [x] Phase 10: Unified Organizational Administration
-  - [x] Implement Backend `DepartmentsController` CRUD endpoints
-  - [x] Implement Backend `TeamsController` CRUD endpoints
-  - [x] Engineer Frontend Server Actions for Departments and Teams
-  - [x] Build Next.js `/admin/departments` Interactive UI Application
+## Phase 10. Security Matrix & Permissions
+- [x] Build `PermissionsController.cs` directly exposing global application capabilities explicitly mapped in C#.
+- [x] Construct dynamic frontend grid elegantly located at `/admin/permissions` seamlessly showing distinct backend rights explicitly.
 
-- [x] Phase 11: Multi-Tenant RBAC Evolution
-  - [x] Implement Backend `IPermissionService` Scoped Authorization Engine
-  - [x] Harden `EmployeesController` with `SiteId` Target Context checks
-  - [x] Implement Backend SQL Data Masking across GET dataset logic
-  - [x] Upgrade `AuthController` formatting `ScopedPermissions` on JWT tokens
-  - [x] React-ify Client UI parsing conditional inline buttons seamlessly
+## Phase 11. Role Management Definitions
+- [x] Build `RolesController.cs` executing dynamic capability maps iteratively onto `RolePermission` bridge tables stably over entity saves.
+- [x] Engineer `/admin/roles` React UI seamlessly allowing explicit mappings of analytical rights directly onto formal structural models natively.
 
-- [x] Phase 12: Global Sites Administration
-  - [x] Provision Backend `SitesController.cs` Administrative HTTP commands
-  - [x] Code Next.js `sites.ts` interactive Server Action components
-  - [x] Construct the advanced `/admin/sites` visual React Datagrid array
-  - [x] Bind new endpoints natively onto the Core layout Sidebar
+## Phase 12. Authentication UI & Layout Guardrails
+- [x] Engineer `/login` screen securely persisting JWT standard cookies effectively via powerful Next.js Server Actions completely bypassing generic interceptors.
+- [x] Program conditional structural Next.js Sidebar components securely parsing distinct `userRoleClaim` metrics visually configuring Admin layers exclusively.
 
+## Phase 13. System Bulk Seeding Engine (CSV Import)
+- [x] Provision Backend `SetupController.cs` safely executing multi-dimensional CSVs dynamically via lightweight `CsvHelper` interceptors mapping complex strings structurally.
+- [x] Engineer robust `QuickSetupForm.tsx` cleanly transmitting raw analytical File buffers natively parsing explicitly upon POST HTTP execution dynamically mapping responses globally.
+
+## Phase 14. Bulk Ingestion State Tracking (Phase 21)
+- [x] Intercept the `SetupController.cs` bulk engine structurally encapsulating logically distinct inserted, identical, or updated models firmly tracking exact modifications onto UI array natively.
+- [x] Render a gorgeous dynamically auto-scrolling analytical grid strictly parsing HTTP mapped newly uploaded workforces directly inside the Quick Setup organically smoothly tracking skips implicitly.
+
+## Phase 15. Active User Provisioning & Search (Phase 22)
+- [x] Intercept `SetupController` & `EmployeesController` natively encapsulating active `UserAccount` insertion logic identically responding smoothly upon explicit UI boolean flags directly.
+- [x] Engineer the beautiful `/admin/users` Next.js screen meticulously slicing generic datasets neatly upon exact explicit parameters uniquely mapping Elevated vs Basic Logins intelligently over API cleanly.
+- [x] Construct the definitive RBAC formal Geo-Role Assigner Module smartly executing real-time `UserAccount` clearances seamlessly over bounded scopes perfectly dynamically executed.
+- [x] Synthesize structural EF Core `?search=` intercepts scaling dynamically mapping UI form queries natively cleanly across Employees tracking textual mappings symmetrically identical over REST bindings gracefully.
+- [x] Synchronize interactive `EmployeeFormClient.tsx` actively injecting the `Allow Login` capability globally on both PUT & POST endpoints dynamically syncing visually with EF Core instantly securely.
+
+## Phase 16. Multi-Tenant Horizontal Scoping (ISiteScoped)
+- [x] Define an identical `ISiteScoped` global interface standard precisely executed securely natively mapped into Data standard structures organically.
+- [x] Compute the programmatic `SiteScopeExtensions` utility explicitly clamping physical SQL bounds smoothly onto all EF Core streams identically enforcing isolation.
+- [x] Structurally attach interfaces safely bridging `Employee`, `Department`, and `Announcement` entities into geographic mapping standards elegantly.
+- [x] Audit REST Controllers natively invoking internal programmatic logic safely forcefully resolving explicit 403 Forbidden intercept boundaries against cross-tenant payload intrusions gracefully securely.
+
+## Phase 17. Corporate Announcements Feed
+- [x] Design architectural `DbSet<Announcement>` exactly bridging generic text data structurally towards `Site` locations organically within DB dynamically correctly tracking context explicitly safely over MySQL perfectly mapped dynamically structurally explicitly natively smoothly.
+- [x] Deploy explicit generic `AnnouncementsController.cs` accurately tracking standard JWT scoped permissions directly computing text arrays structurally resolving REST protocols gracefully stably reliably globally.
+- [x] Synthesize the native generic `/announcements/page.tsx` structural News Hub seamlessly resolving complex mapping metrics exactly gracefully smoothly rendering dynamic updates explicitly mapping cleanly across UI forms seamlessly properly explicitly.

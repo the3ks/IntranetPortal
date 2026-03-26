@@ -24,11 +24,17 @@ namespace IntranetPortal.Api.Controllers
         // GET: api/employees
         [HttpGet]
         [Authorize(Policy = "Perm:HR.Employee.View")]
-        public async Task<IActionResult> GetEmployees()
+        public async Task<IActionResult> GetEmployees([FromQuery] string? search)
         {
             var query = _context.Employees
                 .AsQueryable()
                 .ApplySiteScope(_permissionService, "HR.Employee.View");
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var lowerSearch = search.ToLower();
+                query = query.Where(e => e.FullName.ToLower().Contains(lowerSearch) || e.Email.ToLower().Contains(lowerSearch));
+            }
 
             var employees = await query
                 .Include(e => e.Position)
@@ -66,7 +72,17 @@ namespace IntranetPortal.Api.Controllers
 
             var employee = await query
                 .Where(e => e.Id == id)
-                .Select(e => new { e.Id, e.FullName, e.Email, e.PositionId, e.DepartmentId, e.TeamId, e.SiteId })
+                .Select(e => new 
+                { 
+                    e.Id, 
+                    e.FullName, 
+                    e.Email, 
+                    e.PositionId, 
+                    e.DepartmentId, 
+                    e.TeamId, 
+                    e.SiteId,
+                    allowLogin = _context.UserAccounts.Any(u => u.EmployeeId == e.Id && u.IsActive)
+                })
                 .FirstOrDefaultAsync();
 
             if (employee == null) return NotFound();
@@ -93,6 +109,19 @@ namespace IntranetPortal.Api.Controllers
             };
 
             _context.Employees.Add(employee);
+
+            if (dto.AllowLogin)
+            {
+                var userAcc = new UserAccount
+                {
+                    Email = employee.Email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
+                    IsActive = true,
+                    Employee = employee
+                };
+                _context.UserAccounts.Add(userAcc);
+            }
+
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetEmployees), new { id = employee.Id }, employee);
@@ -120,6 +149,33 @@ namespace IntranetPortal.Api.Controllers
             employee.DepartmentId = dto.DepartmentId;
             employee.TeamId = dto.TeamId;
             employee.SiteId = dto.SiteId;
+
+            var userAcc = await _context.UserAccounts.FirstOrDefaultAsync(u => u.EmployeeId == id);
+            if (dto.AllowLogin)
+            {
+                if (userAcc == null)
+                {
+                    _context.UserAccounts.Add(new UserAccount
+                    {
+                        Email = employee.Email,
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
+                        IsActive = true,
+                        EmployeeId = employee.Id
+                    });
+                }
+                else
+                {
+                    userAcc.IsActive = true;
+                    userAcc.Email = employee.Email; // Sync email if changed structurally
+                }
+            }
+            else
+            {
+                if (userAcc != null)
+                {
+                    userAcc.IsActive = false;
+                }
+            }
 
             await _context.SaveChangesAsync();
             return Ok(employee);
@@ -149,5 +205,6 @@ namespace IntranetPortal.Api.Controllers
         public int DepartmentId { get; set; }
         public int? TeamId { get; set; }
         public int SiteId { get; set; }
+        public bool AllowLogin { get; set; } = true;
     }
 }

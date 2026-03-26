@@ -3,10 +3,13 @@ import { updateEmployeeAction } from "@/app/actions/employees";
 import MainLayout from "@/components/layout/MainLayout";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import EmployeeFormClient from "@/app/employees/EmployeeFormClient";
 
-export default async function EditEmployeePage({ params }: { params: { id: string } }) {
+export default async function EditEmployeePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  
   const [empRes, sitesRes, deptsRes, posRes, teamsRes] = await Promise.all([
-    fetchWithAuth(`/api/employees/${params.id}`, { cache: 'no-store' }),
+    fetchWithAuth(`/api/employees/${id}`, { cache: 'no-store' }),
     fetchWithAuth("/api/sites"),
     fetchWithAuth("/api/departments"),
     fetchWithAuth("/api/positions"),
@@ -34,62 +37,14 @@ export default async function EditEmployeePage({ params }: { params: { id: strin
             <p className="mt-2 text-gray-500">Modify demographic or organizational assignment structures securely.</p>
           </header>
 
-          <form action={updateEmployeeAction} className="space-y-6">
-            <input type="hidden" name="id" value={employee.id} />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Full Name</label>
-                <input type="text" name="fullName" defaultValue={employee.fullName} required className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Email Address</label>
-                <input type="email" name="email" defaultValue={employee.email} required className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Official Job Title</label>
-              <select name="positionId" defaultValue={employee.positionId || ""} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white shadow-sm appearance-none">
-                <option value="">Select Organizational Position...</option>
-                {positions.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-6 mt-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Department</label>
-                <select name="departmentId" defaultValue={employee.departmentId} required className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white shadow-sm appearance-none">
-                  {depts.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Sub-Team / Channel</label>
-                <select name="teamId" defaultValue={employee.teamId || ""} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white shadow-sm appearance-none">
-                  <option value="">No Active Channel Assignment...</option>
-                  {depts.map((d: any) => (
-                    <optgroup key={d.id} label={d.name}>
-                      {teams.filter((t: any) => t.departmentId === d.id).map((t: any) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Site Boundaries</label>
-                <select name="siteId" defaultValue={employee.siteId} required className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white shadow-sm appearance-none">
-                  {sites.map((s: any) => <option key={s.id} value={s.id}>{s.name} - {s.address}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div className="pt-4 flex justify-end">
-                <button type="submit" className="w-full md:w-auto px-10 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all text-center">
-                  Save Changes
-                </button>
-            </div>
-          </form>
+          <EmployeeFormClient 
+            employee={employee}
+            sites={sites} 
+            depts={depts} 
+            positions={positions} 
+            teams={teams} 
+            action={updateEmployeeAction} 
+          />
         </div>
       </div>
     </MainLayout>

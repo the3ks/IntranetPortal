@@ -46,7 +46,7 @@ namespace IntranetPortal.Api.Controllers
 
             // Determine the explicit Localized Sequence explicitly for Departments.
             int? targetSiteId = null;
-            string firstDtoSite = dto.Sites?.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim();
+            string? firstDtoSite = dto.Sites?.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim();
             
             if (!string.IsNullOrEmpty(firstDtoSite))
             {
@@ -72,7 +72,7 @@ namespace IntranetPortal.Api.Controllers
             {
                 foreach (var d in dto.Departments.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()))
                 {
-                    if (!await _context.Departments.AnyAsync(x => x.Name.ToLower() == d.ToLower()))
+                    if (!await _context.Departments.AnyAsync(x => x.Name.ToLower() == d.ToLower() && x.SiteId == targetSiteId.Value))
                     {
                         _context.Departments.Add(new Department { Name = d, SiteId = targetSiteId.Value });
                         deptsAdded++;
@@ -130,6 +130,157 @@ namespace IntranetPortal.Api.Controllers
                 Stats = new { sites = sitesAdded, departments = deptsAdded, roles = rolesAdded, positions = posAdded, permissions = permsAdded }
             });
         }
+
+        [HttpPost("import-employees")]
+        public async Task<IActionResult> ImportEmployees(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return BadRequest("Native CSV file is structurally empty or missing.");
+
+            using var reader = new StreamReader(file.OpenReadStream());
+            using var csv = new CsvHelper.CsvReader(reader, System.Globalization.CultureInfo.InvariantCulture);
+            
+            var records = csv.GetRecords<CsvEmployeeRecord>().ToList();
+            var addedCount = 0;
+            var updatedCount = 0;
+            var importedList = new List<object>();
+
+            foreach (var rec in records)
+            {
+                if (string.IsNullOrWhiteSpace(rec.Email) || string.IsNullOrWhiteSpace(rec.FullName)) continue;
+
+                var siteName = string.IsNullOrWhiteSpace(rec.Site) ? "Head Office" : rec.Site.Trim();
+                var site = await _context.Sites.FirstOrDefaultAsync(s => s.Name.ToLower() == siteName.ToLower());
+                if (site == null)
+                {
+                    site = new Site { Name = siteName };
+                    _context.Sites.Add(site);
+                    await _context.SaveChangesAsync();
+                }
+
+                var deptName = string.IsNullOrWhiteSpace(rec.Department) ? "General" : rec.Department.Trim();
+                var dept = await _context.Departments.FirstOrDefaultAsync(d => d.Name.ToLower() == deptName.ToLower() && d.SiteId == site.Id);
+                if (dept == null)
+                {
+                    dept = new Department { Name = deptName, SiteId = site.Id };
+                    _context.Departments.Add(dept);
+                    await _context.SaveChangesAsync();
+                }
+
+                Team? team = null;
+                if (!string.IsNullOrWhiteSpace(rec.Team))
+                {
+                    var teamName = rec.Team.Trim();
+                    team = await _context.Teams.FirstOrDefaultAsync(t => t.Name.ToLower() == teamName.ToLower() && t.DepartmentId == dept.Id);
+                    if (team == null)
+                    {
+                        team = new Team { Name = teamName, DepartmentId = dept.Id };
+                        _context.Teams.Add(team);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                Position? position = null;
+                if (!string.IsNullOrWhiteSpace(rec.Position))
+                {
+                    var posName = rec.Position.Trim();
+                    position = await _context.Positions.FirstOrDefaultAsync(p => p.Name.ToLower() == posName.ToLower());
+                    if (position == null)
+                    {
+                        position = new Position { Name = posName };
+                        _context.Positions.Add(position);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                var isNew = false;
+                var isModified = false;
+                var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email.ToLower() == rec.Email.ToLower().Trim());
+                
+                if (employee == null)
+                {
+                    employee = new Employee
+                    {
+                        FullName = rec.FullName.Trim(),
+                        Email = rec.Email.Trim(),
+                        PositionId = position?.Id,
+                        DepartmentId = dept.Id,
+                        TeamId = team?.Id,
+                        SiteId = site.Id
+                    };
+                    _context.Employees.Add(employee);
+                    addedCount++;
+                    isNew = true;
+
+                    var allowStr = rec.AllowLogin?.Trim().ToLower() ?? "yes";
+                    if (allowStr == "yes" || allowStr == "true" || allowStr == "1" || allowStr == "y")
+                    {
+                        var userAcc = new UserAccount
+                        {
+                            Email = employee.Email,
+                            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
+                            IsActive = true,
+                            Employee = employee
+                        };
+                        _context.UserAccounts.Add(userAcc);
+                    }
+                }
+                else
+                {
+                    var allowStr = rec.AllowLogin?.Trim().ToLower() ?? "yes";
+                    if (allowStr == "yes" || allowStr == "true" || allowStr == "1" || allowStr == "y")
+                    {
+                        var existingAcc = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Email == employee.Email);
+                        if (existingAcc == null)
+                        {
+                            var userAcc = new UserAccount
+                            {
+                                Email = employee.Email,
+                                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
+                                IsActive = true,
+                                Employee = employee
+                            };
+                            _context.UserAccounts.Add(userAcc);
+                        }
+                    }
+                    if (employee.FullName != rec.FullName.Trim() ||
+                        employee.PositionId != position?.Id ||
+                        employee.DepartmentId != dept.Id ||
+                        employee.TeamId != team?.Id ||
+                        employee.SiteId != site.Id)
+                    {
+                        employee.FullName = rec.FullName.Trim();
+                        employee.PositionId = position?.Id;
+                        employee.DepartmentId = dept.Id;
+                        employee.TeamId = team?.Id;
+                        employee.SiteId = site.Id;
+                        updatedCount++;
+                        isModified = true;
+                    }
+                }
+
+                importedList.Add(new {
+                    FullName = employee.FullName,
+                    Email = employee.Email,
+                    PositionName = position?.Name ?? "Unassigned",
+                    DepartmentName = dept.Name,
+                    SiteName = site.Name,
+                    Action = isNew ? "Inserted" : (isModified ? "Updated" : "Skipped")
+                });
+            }
+
+            if (addedCount > 0 || updatedCount > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { 
+                Message = "CSV Stream digested gracefully.", 
+                Inserted = addedCount, 
+                Updated = updatedCount,
+                Skipped = records.Count - addedCount - updatedCount,
+                Employees = importedList
+            });
+        }
     }
 
     public class QuickSetupDto
@@ -139,5 +290,29 @@ namespace IntranetPortal.Api.Controllers
         public List<string> Departments { get; set; } = new();
         public List<string> Sites { get; set; } = new();
         public List<string> Permissions { get; set; } = new();
+    }
+
+    public class CsvEmployeeRecord
+    {
+        [CsvHelper.Configuration.Attributes.Name("FullName")]
+        public string FullName { get; set; } = string.Empty;
+        
+        [CsvHelper.Configuration.Attributes.Name("Email")]
+        public string Email { get; set; } = string.Empty;
+        
+        [CsvHelper.Configuration.Attributes.Name("Position")]
+        public string? Position { get; set; }
+        
+        [CsvHelper.Configuration.Attributes.Name("Department")]
+        public string? Department { get; set; }
+        
+        [CsvHelper.Configuration.Attributes.Name("Team")]
+        public string? Team { get; set; }
+        
+        [CsvHelper.Configuration.Attributes.Name("Site")]
+        public string? Site { get; set; }
+
+        [CsvHelper.Configuration.Attributes.Name("Allow Login")]
+        public string? AllowLogin { get; set; }
     }
 }
