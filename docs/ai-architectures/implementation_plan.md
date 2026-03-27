@@ -1,131 +1,57 @@
-# Implementation Plan: Multi-Tenant RBAC Site Isolation
-
-The current capability matrix authorizes users globally (e.g., if a manager has `Announcements.View`, they can view all announcements across the entire organization). The objective is to rigidly bind entities to physical `SiteIds` and rewire the capabilities engine so users can only manipulate resources inside their specifically authorized Sites.
-
-## Proposed Changes
-
-### 1. Schema Expansion
-**Goal:** Guarantee every structural element traces back to a geographic boundary.
-#### [MODIFY] `IntranetPortal.Data/Models/Employee.cs`
-- Retain existing `int SiteId` mapping.
-
-#### [MODIFY] `IntranetPortal.Data/Models/Department.cs`
-- Introduce `int? SiteId { get; set; }` to support globally shared departments vs isolated site departments.
-- Add `public Site? Site { get; set; }` foreign key.
-
-#### [MODIFY] `IntranetPortal.Data/Models/Announcement.cs`
-- Introduce `int? SiteId { get; set; }` allowing announcements to target a specific corporate building or blast globally (`null`).
-- Add `public Site? Site { get; set; }` foreign key.
-
-#### [NEW] Database Migration
-- Add standard Entity Framework migrations (`dotnet ef migrations add AddSiteIdScopeLimits`) to inject `SiteId` into both the `Departments` and `Announcements` primary SQL tables.
-- Run `dotnet ef database update`.
-
-### 2. Authorization Engine Refactor
-**Goal:** `[Authorize(Policy="...")]` acts as a global entry gate. True multi-tenant verification must filter horizontally at the database level!
-#### [MODIFY] `IntranetPortal.Api/Security/PermissionService.cs`
-- Inject a core helper method to extract native bounded scopes: `Task<List<int?>> GetAuthorizedSitesForCapabilityAsync(int userId, string permission)`.
-- A returned `null` inside the list means the user holds Global Scope (`System.FullAccess` or a Role spanning all sites).
-- If the list contains specific integers like `[2, 4]`, the user's authority strictly ends there.
-
-### 3. API Controller Hardening
-**Goal:** Map the PermissionService scopes directly into the EF Core `IQueryable` loops natively!
-#### [MODIFY] `AnnouncementsController.cs`, `EmployeesController.cs`, `DepartmentsController.cs`
-- **GET (Read Scopes):** Intercept the `IQueryable`. Sweep the user's token scopes, and dynamically append `.Where(x => allowedSites.Contains(null) || allowedSites.Contains(x.SiteId))` directly into the SQL response!
-- **POST/PUT/DELETE (Write Mutations):** Before modifying or injecting an entity into the database, forcefully crash the pipeline with an `HTTP 403 Forbidden` if the manager targets a `SiteId` they don't explicitly own.
-
-## User Review Required
-> [!WARNING]
-> This is a deep structural shift. It will perfectly isolate Tokyo managers from accidentally modifying London documents! Does this Multi-Tenant horizontal architecture align precisely with your vision before I execute these schemas?
+# Intranet Portal: Master Implementation Blueprint
+*Persistent architectural foundation for the Multi-Tenant RBAC ecosystem, from initial database scaffolding through advanced horizontal geo-scoping metrics.*
 
 ---
 
-# Implementation Plan: Rapid Bulk CSV Employee Importer
-
-## Goal
-Implement a single-click CSV bulk injection utility within the **Quick Setup** interface allowing enterprise managers to mass-deploy employees. The system will aggressively evaluate the CSV columns and mathematically auto-generate any missing underlying structures (Sites, Departments, Teams, Positions) on the fly!
-
-## Proposed Changes
-
-### 1. Backend CSV Auto-Generation Engine
-#### [MODIFY] `IntranetPortal.Api/Controllers/SetupController.cs`
-- Expose a new REST API endpoint: `[HttpPost("import-employees")]`.
-- The endpoint will natively accept an `IFormFile` (the uploaded `.csv` document).
-- **Format Expected:** `FullName, Email, JobTitle, Department, SubTeam, SiteName`.
-- **Intelligent Matrix Mapping:** For every single row, the backend will sequentially query the database:
-  - Find or Create the `Site`
-  - Find or Create the `Department` physically locked to that `SiteId`.
-  - Find or Create the `Team` locked to that `DepartmentId`.
-  - Find or Create the `Position`.
-  - Validate Employee isolation bounds and mass-insert the new `Employee` natively!
-
-### 2. Frontend "Rapid Config" GUI
-#### [MODIFY] `frontend/src/app/admin/quick-setup/QuickSetupForm.tsx` (OR parallel component)
-- Construct an isolated, aesthetically distinct **"Batch Employee Importer (CSV)"** Dropzone/Button below the dictionary textareas.
-- Integrate a hidden `<input type="file" accept=".csv">` mapped securely to a Next.js `FormData` HTTP fetch router pushing natively straight to the C# endpoint.
-- Provide a downloadable "CSV Template" string helper natively so administrators understand the exact column arrays globally expected.
-
-## Verification Plan
-1. Fabricate a diverse CSV payload mathematically spanning overlapping Sites and missing Departments.
-2. Submit the CSV through the frontend application UI.
-3. Refresh the `/employees` screen to visually verify the Employees natively span their independent Geographic nodes gracefully.
+## 1. Core Architecture & Stack Foundation
+**Goal:** Establish a robust architecture isolating the backend API from the interactive frontend.
+- **Backend Infrastructure:** .NET 10.0 ASP.NET Web API configured with Swagger/OpenAPI.
+- **Data Engine:** Entity Framework Core (EF Core 9) connected to a MySQL database utilizing EF structural migrations.
+- **Frontend Infrastructure:** Next.js 16 (App Router) architected with Tailwind CSS and Next.js Server Actions.
 
 ---
 
-# Implementation Plan: Dynamic Geographic Scoping Filters
-
-## Goal
-Because global administrators (or Multi-Site Managers) can view employees seamlessly spanning 10 locations, both the `/employees` and `/departments` frontend UI panels must dynamically inject an explicit "Site Switcher" dropdown. 
-
-The filter strictly enforces Next.js UX Standards:
-1. **Dynamic Options:** The dropdown maps exclusively to the Sites the active User mathematically possesses permissions for via their JWT.
-2. **Locked State UX:** If a user only possesses explicit permission for 1 physical Site, the dropdown aggressively locks (disables) mitigating any navigation confusion natively.
-3. **Server-Side Interpolation:** Switching sites automatically injects a Next.js `?siteId=X` search parameter seamlessly into the URL Router, preserving the pure Server-Component rendering loop natively.
-
-## Proposed Frontend Pipeline Changes
-
-#### [MODIFY] `src/app/employees/page.tsx`
-- Refactor the Server Component `EmployeesPage({ searchParams })` to natively extract the `?siteId=` URL parameter synchronously.
-- Loop across the extracted `Site` database arrays generating an isolated `<select>` dropdown interactively mapped to `router.push("?siteId=X")`.
-- Measure the lengths of explicitly authorized sites derived natively from `user.ScopedPerm`: If length is exactly 1, rigidly inject the `disabled` property onto the `<select>` node securely.
-- Structurally filter the `employees.filter()` array rendering completely organically based on the active `siteId` switch.
-
-#### [MODIFY] `src/app/departments/page.tsx`
-- Duplicate the precise dropdown UI standard mechanically across the structural Departments grid identically enforcing identical mathematical JWT isolation matrices.
+## 2. Enterprise RBAC & Identity Schema
+**Goal:** Isolate HR structural elements from software access layers.
+- **`UserAccount` Module:** Stores the `[Email]` and `BCrypt`-hashed `[PasswordHash]` securely validating HTTP boundaries.
+- **`Role` & `Permission` Engine:** Highly granular many-to-many lookup structures bridging explicit capabilities (e.g., `HR.Employee.Create`) onto Role templates.
+- **Geographic Nodes (`Site`):** Represents rigid physical facilities. Ensures database rows are horizontally partitioned across geographic borders.
+- **Hybrid Cross-Binding (`UserRole`):** Solves enterprise scale by binding distinct Roles to specific `SiteId` constraints.
 
 ---
 
-# Implementation Plan: Hybrid Access Management & Roles Panel
+## 3. HR Organizational Matrix Definition
+**Goal:** Construct the foundational business logic entities mapping corporate dependency flows.
+- **`Employee` Entity:** Stores core HR fields. Possesses explicit Foreign Keys binding it to a singular `Position`, `Department`, `Team`, and geometric `Site`.
+- **Structural Constraints:** `Sites` contain `Departments`; `Departments` contain formal `Teams`.
 
-## Objective
-Merge Automated Account Provisioning with strict Role Access segregation natively.
-1. **Provisioning:** When an Employee is created (via UI or CSV), an `Allow Login` flag (default: Yes) immediately creates a baseline `UserAccount` granting "Basic Access" (no explicitly elevated Security Roles).
-2. **Access Security Dashboard:** A dedicated `/admin/users` UI strictly manages these accounts securely.
-3. **Smart Matrix Filtering:** The Access Panel splits users natively via a structural UI Filter separating "Basic Staff" (default access only) from "Elevated Rights" (assigned specific multi-tenant `[UserRoles]`).
+---
 
-## Proposed Changes
+## 4. Authentication Pipeline & JWT Cryptography
+**Goal:** Synthesize Identity graphs over REST HTTP Headers efficiently avoiding redundant database queries on every HTTP request.
+- **`AuthController.cs`:** The entrypoint executing `BCrypt` hashing bounds and validating user credentials.
+- **Granular Token Schema:** JWT payload containing Claims formatted as `PermissionName:SiteId` strings (e.g., `HR.Employee.View:4`).
+- **`PermissionService.cs`:** A bespoke C# utility evaluating the `ScopedPerm` claim array, effectively blocking 403 HTTP violations across structurally bound mutations.
 
-### 1. Account Auto-Provisioning & CSV Injection
-**Goal:** Mathematically generate Security Accounts transparently during HR creation.
-#### [MODIFY] `EmployeesController.cs` & `SetupController.cs`
-- Add an `AllowLogin` boolean explicitly mapped to incoming UI payloads and the CSV Parser Native Engine.
-- If `AllowLogin == true`, explicitly hash a default standard password and inject a `UserAccount` bound perfectly to the new `EmployeeId`.
+---
 
-### 2. The Granular Security Dashboard (`/admin/users`)
-**Goal:** Build a flawless UI datagrid safely filtering and searching the structural User graph.
-#### [NEW] `frontend/src/app/admin/users/page.tsx`
-- Build the Users React Datagrid listing active `UserAccount` rows physically joined to `Employee.FullName`.
-- **Search Module:** Implement a text input `?search=` parameter mechanically filtering the `IQueryable` securely.
-- **Security Scope Filter:** Implement a dropdown safely filtering users:
-  - `Elevated Rights` (Default) -> Only shows Users possessing explicit Security Roles.
-  - `Basic Staff` -> Only shows Users carrying zero explicit Roles seamlessly.
-- **RBAC Assignment Modal:** Click "Manage Security Roles" to visually bind explicit Geographically-isolated `UserRoles` mathematically to an account!
+## 5. Multi-Tenant Horizontal Scoping (ISiteScoped)
+**Goal:** Mathematically guarantee identical data filtering vertically across the entire Application layer APIs.
+- **`ISiteScoped` Interface:** A globally standard C# Interface enforcing the existence of a `SiteId` integer on conforming Entity Framework Models.
+- **`SiteScopeExtensions.cs` IQueryable Hook:** Automatically intercepts `IQueryable` flows (e.g. `_context.Employees.AsQueryable()`) dynamically appending `.Where()` clauses evaluating the JWT scopes array.
 
-### 3. Employee Grid Search Index
-**Goal:** Scale the text-search search box natively to the primary HR datagrid organically.
-#### [MODIFY] `frontend/src/app/employees/page.tsx`
-- Intercept Next.js query parameters injecting a `?search=` URL text router physically interpolating the string directly against the backend EF Core `Employees` stream!
+---
 
-## User Review Required
-> [!IMPORTANT]
-> This restores the perfectly pristine mathematical separation between HR layers and RBAC capability arrays cleanly! You can provision software access separately from elevated Role Access flawlessly natively. Does this blueprint align precisely with your expectations?
+## 6. Bulk System Seeding Engine (CSV)
+**Goal:** Rapidly ingest massive structural spreadsheets seamlessly into relational databases.
+- **`SetupController.cs` CSV Router:** Parses `IFormFile` memory buffers utilizing `CsvHelper` logically tracking `Created`, `Skipped`, and `Updated` metrics to provide frontend feedback.
+- **Auto-Computation Matrices:** If a generic string column contains "London Hub", the C# dictionary loop will explicitly locate or immediately construct the missing `Site` model.
+
+---
+
+## 7. Hybrid Auto-Provisioning & Security UI
+**Goal:** Bridge the gap between bare-metal HR entry creation and explicit Software Credential issuance flexibly.
+- **Basic Provisioning Flow:** An `AllowLogin` boolean is submitted via `/employees/new`. This flags `EmployeesController.cs` to instantly generate a matching `UserAccount` object with an active hash.
+- **Security Dashboard UI:** Build `frontend/src/app/admin/users/page.tsx` slicing `UserAccount` grids upon parameter segments separating `Elevated Rights` from `Basic Staff` users.
+- **RBAC Formal Geo-Role Assigner Module:** Real-time `UserAccount` capability assignment modal allowing Admins to attach a `Role` against a `SiteScope`.
+- **EF Core Search Intercepts:** Map dynamic `?search=` HTTP parameters directly against C# SQL streams identically across the core Employee mapping and Admin Security tables.

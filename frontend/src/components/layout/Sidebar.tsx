@@ -24,6 +24,10 @@ export default function Sidebar({ user }: { user?: any }) {
 
   const isLinkActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
+  let sidebarTitle = siteConfig.name;
+  if (activeModule === "hub") sidebarTitle = "The Hub";
+  if (activeModule === "admin") sidebarTitle = "Administration";
+
   return (
     <>
       {/* Mobile Toggle Button */}
@@ -49,19 +53,18 @@ export default function Sidebar({ user }: { user?: any }) {
       <aside className={`fixed inset-y-0 left-0 bg-gray-900 text-gray-300 w-72 p-6 shadow-2xl transform transition-transform duration-300 ease-in-out z-40 ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 flex flex-col`}>
         <div className="flex items-center space-x-3 mb-10 mt-2">
           <div className="w-10 h-10 rounded-xl shadow-lg flex items-center justify-center overflow-hidden border border-gray-700/50 bg-gray-800 shrink-0">
-            <Image src="/icon-512x512.png" alt="App Logo" width={40} height={40} className="object-cover" priority />
+            {activeModule === "hub" ? (
+              <svg className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            ) : activeModule === "admin" ? (
+              <svg className="w-6 h-6 text-amber-500 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            ) : (
+              <Image src="/icon-512x512.png" alt="App Logo" width={40} height={40} className="object-cover group-hover:scale-105 transition-transform" priority />
+            )}
           </div>
-          <span className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 truncate">{siteConfig.name}</span>
+          <span className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 truncate">{sidebarTitle}</span>
         </div>
         
         <nav className="flex flex-col space-y-2 flex-1 overflow-y-auto overflow-x-hidden elegant-scrollbar pb-4 pr-1">
-          {activeModule !== "home" && (
-            <Link href="/" className="hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 mb-6 bg-gray-800/40 border border-gray-700/50 text-gray-300 shadow-sm active:scale-95 group">
-              <svg className="w-5 h-5 text-gray-400 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-              <span className="font-bold tracking-wide">All Apps</span>
-            </Link>
-          )}
-
           {/* Context: The Hub */}
           {activeModule === "hub" && (
             <>
@@ -131,6 +134,15 @@ export default function Sidebar({ user }: { user?: any }) {
           )}
 
         </nav>
+
+        {activeModule !== "home" && (
+          <div className="pt-6 mt-auto border-t border-gray-800">
+            <Link href="/" className="hover:bg-gray-800 focus:ring-2 focus:ring-blue-500/50 outline-none hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 text-gray-400 shadow-sm active:scale-95 group">
+              <svg className="w-5 h-5 text-gray-500 group-hover:-translate-x-1 group-hover:text-blue-400 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+              <span className="font-bold tracking-wide">Universal Portal</span>
+            </Link>
+          </div>
+        )}
       </aside>
     </>
   );
