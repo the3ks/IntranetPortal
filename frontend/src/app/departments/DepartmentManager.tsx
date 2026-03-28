@@ -92,25 +92,22 @@ export default function DepartmentManager({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-        <div>
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Organization Departments</h2>
-          <p className="text-gray-500 mt-2 text-base">Manage global divisions and organizational units.</p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-end gap-6 bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100">
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto justify-end">
           {permittedSites && (
-            <div className="pt-4 sm:pt-0 sm:pr-6 w-full sm:w-auto">
+            <div className="w-full sm:w-auto shrink-0">
               <SiteFilter sites={permittedSites} currentSiteId={currentSiteId} disabled={!!filterDisabled} />
             </div>
           )}
           {canCreate && (
-            <div className="pt-4 sm:pt-0 sm:pl-6">
+            <div className="w-full sm:w-auto shrink-0">
               <button
                 onClick={() => openModal()}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold shadow-md transition-all flex items-center space-x-2 shrink-0 whitespace-nowrap"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-semibold shadow-md transition-all flex items-center justify-center space-x-2 shrink-0 whitespace-nowrap w-full sm:w-auto"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 <span>New Department</span>
               </button>
@@ -128,7 +125,7 @@ export default function DepartmentManager({
             </svg>
           </div>
         )}
-        <div className="overflow-x-auto">
+        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>

@@ -20,7 +20,7 @@ export default function SearchFilter({ placeholder = "Search records..." }: { pl
   };
 
   return (
-    <form onSubmit={handleSearch} className="relative w-full max-w-sm">
+    <form onSubmit={handleSearch} className="relative w-full">
       <input
         type="text"
         value={searchTerm}

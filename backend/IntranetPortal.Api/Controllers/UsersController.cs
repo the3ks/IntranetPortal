@@ -117,11 +117,31 @@ namespace IntranetPortal.Api.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+
+        // POST: api/users/{id}/reset-password
+        [HttpPost("{id}/reset-password")]
+        public async Task<IActionResult> ResetPassword(int id, [FromBody] PasswordResetDto dto)
+        {
+            var user = await _context.UserAccounts.FindAsync(id);
+            if (user == null) return NotFound("Software Identity Account inherently missing.");
+
+            if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
+                return BadRequest("Secure boundaries require standard multi-character metrics minimum perfectly exactly.");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Authentication credentials structurally redefined flawlessly." });
+        }
     }
 
     public class RoleAssignmentDto
     {
         public int RoleId { get; set; }
         public int? SiteId { get; set; }
+    }
+
+    public class PasswordResetDto
+    {
+        public string NewPassword { get; set; } = string.Empty;
     }
 }

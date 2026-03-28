@@ -9,10 +9,9 @@ export default function DocsIndex() {
     <MainLayout>
       <div className="max-w-5xl mx-auto py-8">
         <div className="mb-10">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Documentation Hub</h1>
           <p className="mt-2 text-lg text-gray-500">Official technical specifications and organizational guides.</p>
         </div>
-        
+
         <div className="grid gap-6 md:grid-cols-2">
           {docs.length === 0 ? (
             <div className="col-span-2 text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
@@ -27,11 +26,11 @@ export default function DocsIndex() {
                 <div className="mt-5 flex items-center text-xs text-gray-400 font-medium">
                   <span className="flex items-center">
                     <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center mr-2 text-[10px] font-bold">
-                        {doc.author.substring(0,2).toUpperCase()}
-                    </div> 
+                      {doc.author.substring(0, 2).toUpperCase()}
+                    </div>
                     {doc.author}
                   </span>
-                  <span className="mx-3">•</span> 
+                  <span className="mx-3">•</span>
                   <span>{doc.date}</span>
                 </div>
               </div>

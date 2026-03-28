@@ -22,21 +22,21 @@ import SearchFilter from "@/components/SearchFilter";
 
 export default async function EmployeesPage({ searchParams }: { searchParams: Promise<{ siteId?: string, search?: string }> }) {
   const { siteId, search } = await searchParams;
-  
+
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value || "";
   let user: any = null;
   if (token) {
     try {
       user = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-    } catch {}
+    } catch { }
   }
-  
+
   const userRoleClaim = user?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || user?.role || user?.Role;
   const isAdmin = userRoleClaim === "Admin" || (Array.isArray(userRoleClaim) && userRoleClaim.includes("Admin"));
   const permissionsClaim = user?.Permission || user?.permission || [];
   const permissions = Array.isArray(permissionsClaim) ? permissionsClaim : [permissionsClaim];
-  
+
   const scopedPermsClaim = user?.ScopedPerm || user?.scopedperm || [];
   const scopedPerms = Array.isArray(scopedPermsClaim) ? scopedPermsClaim : [scopedPermsClaim];
 
@@ -52,10 +52,10 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
     fetchWithAuth(`/api/employees?search=${search ? encodeURIComponent(search) : ''}`, { cache: 'no-store' }),
     fetchWithAuth("/api/sites", { cache: 'no-store' })
   ]);
-  
+
   let employees: Employee[] = [];
   let allSites: any[] = [];
-  
+
   if (res.ok) employees = await res.json();
   if (siteRes.ok) allSites = await siteRes.json();
 
@@ -68,26 +68,27 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto space-y-8 py-6">
-        <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Employees</h1>
-            <p className="text-gray-500 mt-2 text-base">Manage personnel, organizational structures, and location assignments safely.</p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
-            <div className="pt-4 sm:pt-0 sm:pr-6 w-full sm:w-auto">
-              <SearchFilter placeholder="Search personnel by name or email..." />
+      <div className="max-w-7xl mx-auto space-y-8">
+        <header className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-end gap-6">
+            {/* Left side: Search & Filter Tools */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-full justify-end">
+              <div className="w-full sm:w-full relative z-20">
+                <SearchFilter placeholder="Search personnel by name or email..." />
+              </div>
+              <div className="w-full sm:w-auto relative z-10 shrink-0">
+                <SiteFilter sites={permittedSites} currentSiteId={siteId} disabled={filterDisabled} />
+              </div>
             </div>
-            <div className="pt-4 sm:pt-0 sm:px-6 w-full sm:w-auto">
-              <SiteFilter sites={permittedSites} currentSiteId={siteId} disabled={filterDisabled} />
-            </div>
+
+            {/* Right side: Primary Action */}
             {canCreate && (
-              <div className="pt-4 sm:pt-0 sm:pl-6">
-                <Link href="/employees/new" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-100 whitespace-nowrap">
+              <div className="w-full lg:w-auto shrink-0 flex sm:justify-end">
+                <Link href="/employees/new" className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-100 whitespace-nowrap w-full sm:w-auto">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  Add New Employee
+                  New Employee
                 </Link>
               </div>
             )}
@@ -138,8 +139,8 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
                       <td className="px-8 py-5">
                         <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
                           <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
                           {emp.siteName}
                         </span>

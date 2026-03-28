@@ -24,7 +24,7 @@ export default function Header({ user }: { user?: any }) {
       "quick-setup": "Rapid Configuration",
       positions: "HR Positions",
       roles: "Security Roles",
-      permissions: "Global Permissions",
+      permissions: "Permission Registry",
     };
     
     if (titleMap[lastSegment]) return titleMap[lastSegment];

@@ -36,3 +36,22 @@ export async function removeRoleAction(userId: number, mappingId: number) {
     return { success: false, error: "Failed to revoke operational clearance." };
   }
 }
+
+export async function resetUserPasswordAction(userId: number, newPassword: string) {
+  const res = await fetchWithAuth(`/api/users/${userId}/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ newPassword }),
+  });
+  
+  if (res.ok) {
+    return { success: true };
+  } else {
+    try {
+      const txt = await res.text();
+      return { success: false, error: txt };
+    } catch {
+      return { success: false, error: "Failed to execute global password mutation securely." };
+    }
+  }
+}

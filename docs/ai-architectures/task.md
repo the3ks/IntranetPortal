@@ -64,6 +64,8 @@
 - [x] Intercept `SetupController` & `EmployeesController` natively encapsulating active `UserAccount` insertion logic identically responding smoothly upon explicit UI boolean flags directly.
 - [x] Engineer the beautiful `/admin/users` Next.js screen meticulously slicing generic datasets neatly upon exact explicit parameters uniquely mapping Elevated vs Basic Logins intelligently over API cleanly.
 - [x] Construct the definitive RBAC formal Geo-Role Assigner Module smartly executing real-time `UserAccount` clearances seamlessly over bounded scopes perfectly dynamically executed.
+- [x] Develop a precise **Administrative Password Reset** endpoint safely intercepting explicit IDs cleanly validating and applying BCrypt mutation seamlessly natively over API.
+- [x] Engineer the contextual `PasswordResetButton` floating safely next to usernames in the Access Control matrix actively overriding software boundaries correctly.
 - [x] Synthesize structural EF Core `?search=` intercepts scaling dynamically mapping UI form queries natively cleanly across Employees tracking textual mappings symmetrically identical over REST bindings gracefully.
 - [x] Synchronize interactive `EmployeeFormClient.tsx` actively injecting the `Allow Login` capability globally on both PUT & POST endpoints dynamically syncing visually with EF Core instantly securely.
 

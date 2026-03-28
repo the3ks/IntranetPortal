@@ -1,13 +1,33 @@
+import { cookies } from "next/headers";
 import { fetchWithAuth } from "@/lib/api";
 import MainLayout from "@/components/layout/MainLayout";
 import Link from "next/link";
 import SearchFilter from "@/components/SearchFilter";
 import UserManager from "./UserManager";
+import PasswordResetButton from "./PasswordResetButton";
 
 export default async function UsersPage({ searchParams }: { searchParams: Promise<{ search?: string, filter?: string }> }) {
   const resolvedParams = await searchParams;
   const search = resolvedParams?.search || "";
   const filter = resolvedParams?.filter || "elevated"; // default to Elevated Rights
+
+  // Dynamically extract the Active Session ID explicitly
+  const cookieStore = await cookies();
+  const token = cookieStore.get("auth_token")?.value || "";
+  let currentUserId: number | null = null;
+
+  if (token) {
+    try {
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      const idClaim = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"]
+        || payload["nameid"]
+        || payload["nameId"]
+        || payload["id"]
+        || payload["Id"]
+        || payload["sub"];
+      if (idClaim) currentUserId = parseInt(idClaim);
+    } catch { }
+  }
 
   // Parallel fetch Users, Roles, and Sites natively
   const [usersRes, rolesRes, sitesRes] = await Promise.all([
@@ -26,28 +46,27 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto space-y-8 py-6">
+      <div className="max-w-7xl mx-auto space-y-8">
         <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Access Control</h1>
             <p className="text-gray-500 mt-2 text-base">Manage software logins and geometric role permissions securely.</p>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
             <div className="pt-4 sm:pt-0 sm:pr-6 w-full sm:w-auto">
               <SearchFilter placeholder="Search personnel by name or email..." />
             </div>
-            
+
             <div className="pt-4 sm:pt-0 sm:px-6 flex items-center space-x-2 w-full sm:w-auto">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Access Scope:</span>
               <div className="bg-gray-100 p-1 rounded-xl flex space-x-1">
-                <Link 
-                  href={`?filter=elevated${search ? '&search=' + encodeURIComponent(search) : ''}`} 
+                <Link
+                  href={`?filter=elevated${search ? '&search=' + encodeURIComponent(search) : ''}`}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${filter === 'elevated' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                 >
                   Elevated Rights
                 </Link>
-                <Link 
-                  href={`?filter=basic${search ? '&search=' + encodeURIComponent(search) : ''}`} 
+                <Link
+                  href={`?filter=basic${search ? '&search=' + encodeURIComponent(search) : ''}`}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${filter === 'basic' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                 >
                   Basic Logins
@@ -90,6 +109,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                             <div className="font-bold text-gray-900 flex items-center gap-2">
                               {acc.employeeName}
                               {!acc.isActive && <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Disabled</span>}
+                              {Number(acc.id) !== currentUserId && <PasswordResetButton user={acc} />}
                             </div>
                             <div className="text-sm font-medium text-gray-500 mt-0.5">{acc.email}</div>
                           </div>
@@ -100,7 +120,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                           <div className="flex flex-wrap gap-2">
                             {acc.roles.map((r: any) => (
                               <span key={r.id} className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
-                                <svg className="w-3.5 h-3.5 mr-1.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                <svg className="w-3.5 h-3.5 mr-1.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                                 {r.roleName} <span className="mx-1.5 opacity-40">|</span> <span className="text-indigo-900/60 font-medium">{r.siteName}</span>
                               </span>
                             ))}

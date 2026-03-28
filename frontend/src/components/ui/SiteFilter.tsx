@@ -15,7 +15,6 @@ export default function SiteFilter({
   
   return (
     <div className="flex items-center gap-3">
-      <label className="text-sm font-bold text-gray-700 whitespace-nowrap">Location Filter:</label>
       <select 
         disabled={disabled}
         value={currentSiteId || ""}

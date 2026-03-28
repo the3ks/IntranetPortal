@@ -60,7 +60,6 @@ export default function QuickSetupForm() {
     <div className="max-w-7xl mx-auto space-y-8 py-6">
       <header className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Rapid Infrastructure Seeding</h1>
           <p className="text-gray-500 mt-2 text-lg">Bulk insert organizational dictionaries simultaneously. Exactly one value per line.</p>
         </div>
       </header>
@@ -135,7 +134,7 @@ export default function QuickSetupForm() {
         </div>
 
         <div className="pt-6 border-t border-gray-100">
-          
+
           <div className="bg-blue-50 border border-blue-100 p-5 rounded-2xl mb-8 flex gap-4 text-blue-900">
             <svg className="w-6 h-6 flex-shrink-0 text-blue-600 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <div>
@@ -164,7 +163,7 @@ export default function QuickSetupForm() {
         </header>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10">
-          <a 
+          <a
             href={`data:text/csv;charset=utf-8,${encodeURIComponent("FullName,Email,Position,Department,Team,Site\nJohn Doe,john.doe@company.com,Software Engineer,IT,App Team,Head Office\nJane Smith,jane.smith@company.com,HR Specialist,Human Resources,,Head Office")}`}
             download="employee_template.csv"
             className="px-6 py-3.5 bg-gray-50 hover:bg-gray-100 text-gray-800 font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 border border-gray-200"
@@ -172,8 +171,8 @@ export default function QuickSetupForm() {
             <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             Download CSV Template
           </a>
-          
-          <form 
+
+          <form
             action={async (formData) => {
               setLoadingCsv(true);
               setCsvSuccess(null);
@@ -189,7 +188,7 @@ export default function QuickSetupForm() {
                 alert("Network boundary failure mathematically intercepting CSV block.");
               }
               setLoadingCsv(false);
-            }} 
+            }}
             className="flex-1 flex gap-3 w-full"
           >
             <input type="file" name="file" accept=".csv" required className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 font-medium file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer" />
@@ -212,7 +211,7 @@ export default function QuickSetupForm() {
                 <span className="text-gray-600 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">{csvSuccess.skipped} Skipped</span>
               </div>
             </div>
-            
+
             <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-gray-50">

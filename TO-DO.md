@@ -13,3 +13,11 @@ The following major architectural features have been designated for future devel
 - **Staff Publishing Workflow:** Empower department heads to easily manage and publish formal guidelines natively.
 - **Advanced RBAC Integrations:** Tie document visibility directly into the existing `SiteId` and `DepartmentId` mapping structures (e.g., specific IT policies perfectly siloed to the Singapore branch).
 - **Interactive Formatting:** Produce beautifully formatted internal documentation dynamically rendered within the core Next.js application ecosystem mapping.
+
+## Data validation
+**Objective:** Make sure data is always consistent and not broken
+- **Department/Teams:** once having employee in department/team, cannot delete department/team, nor move them to another site
+- **Sites:** once having department/team in site, cannot delete site
+
+
+

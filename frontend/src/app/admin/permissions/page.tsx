@@ -16,10 +16,9 @@ export default async function PermissionsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto space-y-6 py-8">
+      <div className="max-w-7xl mx-auto space-y-6">
         <header className="flex flex-col sm:flex-row justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">System Permissions Map</h1>
             <p className="text-gray-500 mt-2 text-lg">Read-only matrix defining all registered Developer Constants governing platform execution.</p>
           </div>
         </header>
