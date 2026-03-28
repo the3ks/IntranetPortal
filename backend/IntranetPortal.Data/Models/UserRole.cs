@@ -15,5 +15,9 @@ namespace IntranetPortal.Data.Models
         // If assigned a Value, the User assumes the Role explicitly for that local Branch/Site.
         public int? SiteId { get; set; }
         public Site? Site { get; set; }
+
+        // Added for Hierarchical constraints
+        public int? DepartmentId { get; set; }
+        public Department? Department { get; set; }
     }
 }

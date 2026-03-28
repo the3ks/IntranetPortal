@@ -40,7 +40,18 @@ namespace IntranetPortal.Api.Controllers
                 return Unauthorized(new { Message = "Invalid email or password." });
             }
 
-            var token = GenerateJwt(user);
+            var activeDelegations = await _context.RoleDelegations
+                .Include(rd => rd.UserRole)
+                    .ThenInclude(ur => ur.Role)
+                        .ThenInclude(r => r.RolePermissions)
+                            .ThenInclude(rp => rp.Permission)
+                .Where(rd => rd.SubstituteUserId == user.Id && 
+                             rd.IsActive && 
+                             rd.StartDate <= DateTimeOffset.UtcNow && 
+                             rd.EndDate >= DateTimeOffset.UtcNow)
+                .ToListAsync();
+
+            var token = GenerateJwt(user, activeDelegations);
             
             // Temporary backward compatibility for the Next.js UI Role string
             var legacyRole = user.UserRoles.Any(ur => ur.Role.Name == "Admin") ? "Admin" : "Staff";
@@ -95,7 +106,7 @@ namespace IntranetPortal.Api.Controllers
             return Ok(new { Message = "Test admin user logically created equipped with Global Resource Scope!" });
         }
 
-        private string GenerateJwt(IntranetPortal.Data.Models.UserAccount user)
+        private string GenerateJwt(IntranetPortal.Data.Models.UserAccount user, List<IntranetPortal.Data.Models.RoleDelegation>? delegations = null)
         {
             var jwtSettings = _config.GetSection("JwtSettings");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
@@ -108,25 +119,42 @@ namespace IntranetPortal.Api.Controllers
                 new Claim("EmployeeId", user.EmployeeId?.ToString() ?? "")
             };
 
+            var allUserRoles = user.UserRoles.ToList();
+            if (delegations != null)
+            {
+                allUserRoles.AddRange(delegations.Select(d => d.UserRole).Where(ur => ur != null));
+            }
+
             // Inject backwards compatibility Admin boolean for immediate frontend support
-            if (user.UserRoles.Any(ur => ur.Role?.Name == "Admin"))
+            if (allUserRoles.Any(ur => ur.Role?.Name == "Admin"))
             {
                 claims.Add(new Claim(ClaimTypes.Role, "Admin"));
             }
 
             // Inject the precise granular Scoped Permissions explicitly mapping capabilities to strict organizational boundaries!
-            var rolePerms = user.UserRoles
+            var rolePerms = allUserRoles
                 .Where(ur => ur.Role != null && ur.Role.RolePermissions != null)
                 .SelectMany(ur => ur.Role.RolePermissions.Where(rp => rp.Permission != null).Select(rp => new 
                 { 
                     PermName = rp.Permission.Name, 
-                    ScopeStr = ur.SiteId.HasValue ? ur.SiteId.Value.ToString() : "Global" 
-                }));
+                    ur.SiteId,
+                    ur.DepartmentId
+                })).ToList();
 
-            // Map distinct string constraints natively
-            foreach (var sp in rolePerms.Select(x => $"{x.PermName}:{x.ScopeStr}").Distinct())
+            // Distinct ScopedPerm (Functional) constraints
+            var scopedClaims = rolePerms.Where(x => !x.DepartmentId.HasValue)
+                .Select(x => $"{x.PermName}:" + (x.SiteId.HasValue ? x.SiteId.Value.ToString() : "Global")).Distinct();
+            foreach (var sp in scopedClaims)
             {
                 claims.Add(new Claim("ScopedPerm", sp));
+            }
+
+            // Distinct DeptPerm (Hierarchical) constraints
+            var deptClaims = rolePerms.Where(x => x.DepartmentId.HasValue)
+                .Select(x => $"{x.PermName}:{x.DepartmentId.Value}").Distinct();
+            foreach (var dp in deptClaims)
+            {
+                claims.Add(new Claim("DeptPerm", dp));
             }
 
             // Retain the generic un-scoped 'Permission' list strictly allowing [Authorize(Policy="...")] attributes to function natively

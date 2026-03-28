@@ -16,7 +16,8 @@
 - **`UserAccount` Module:** Stores the `[Email]` and `BCrypt`-hashed `[PasswordHash]` securely validating HTTP boundaries.
 - **`Role` & `Permission` Engine:** Highly granular many-to-many lookup structures bridging explicit capabilities (e.g., `HR.Employee.Create`) onto Role templates.
 - **Geographic Nodes (`Site`):** Represents rigid physical facilities. Ensures database rows are horizontally partitioned across geographic borders.
-- **Hybrid Cross-Binding (`UserRole`):** Solves enterprise scale by binding distinct Roles to specific `SiteId` constraints.
+- **Hybrid Cross-Binding (`UserRole`):** Solves enterprise scale by binding distinct Roles to specific `SiteId` (Functional) or `DepartmentId` (Hierarchical) constraints.
+- **Temporary Overrides (`RoleDelegation`):** A proxy table allowing users to securely lend their explicitly scoped Roles to substitutes for defined date ranges.
 
 ---
 
@@ -35,10 +36,10 @@
 
 ---
 
-## 5. Multi-Tenant Horizontal Scoping (ISiteScoped)
+## 5. Multi-Tenant Horizontal & Hierarchical Scoping
 **Goal:** Mathematically guarantee identical data filtering vertically across the entire Application layer APIs.
-- **`ISiteScoped` Interface:** A globally standard C# Interface enforcing the existence of a `SiteId` integer on conforming Entity Framework Models.
-- **`SiteScopeExtensions.cs` IQueryable Hook:** Automatically intercepts `IQueryable` flows (e.g. `_context.Employees.AsQueryable()`) dynamically appending `.Where()` clauses evaluating the JWT scopes array.
+- **`ISiteScoped` & `IDepartmentScoped` Interfaces:** Globally standard C# Interfaces enforcing the existence of scope identifiers (`SiteId`, `DepartmentId`) on conforming Entity Framework Models.
+- **`ScopeExtensions.cs` IQueryable Hook:** Automatically intercepts `IQueryable` flows (e.g. `_context.Employees.AsQueryable()`) dynamically appending `.Where()` clauses evaluating the JWT scopes array.
 
 ---
 

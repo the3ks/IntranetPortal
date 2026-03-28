@@ -28,6 +28,8 @@ namespace IntranetPortal.Api.Controllers
                     .ThenInclude(ur => ur.Role)
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Site)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Department)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -65,7 +67,9 @@ namespace IntranetPortal.Api.Controllers
                         ur.RoleId,
                         RoleName = ur.Role.Name,
                         SiteId = ur.SiteId,
-                        SiteName = ur.Site != null ? ur.Site.Name : "Global Scope"
+                        SiteName = ur.Site != null ? ur.Site.Name : "Global Scope",
+                        DepartmentId = ur.DepartmentId,
+                        DepartmentName = ur.Department != null ? ur.Department.Name : null
                     })
                 })
                 .ToListAsync();
@@ -90,8 +94,14 @@ namespace IntranetPortal.Api.Controllers
                 if (!siteExists) return BadRequest("The specified physical Geographic Boundary does not structurally exist.");
             }
 
-            // Check if this precise Role/Site mapping already exists dynamically
-            if (user.UserRoles.Any(ur => ur.RoleId == dto.RoleId && ur.SiteId == dto.SiteId))
+            if (dto.DepartmentId.HasValue)
+            {
+                var deptExists = await _context.Departments.AnyAsync(d => d.Id == dto.DepartmentId);
+                if (!deptExists) return BadRequest("The specified Organizational Department boundary does not structurally exist.");
+            }
+
+            // Check if this precise Role/Site/Dept mapping already exists dynamically
+            if (user.UserRoles.Any(ur => ur.RoleId == dto.RoleId && ur.SiteId == dto.SiteId && ur.DepartmentId == dto.DepartmentId))
             {
                 return BadRequest("This exact granular capability matrix is already assigned identically to this account.");
             }
@@ -99,7 +109,8 @@ namespace IntranetPortal.Api.Controllers
             user.UserRoles.Add(new UserRole
             {
                 RoleId = dto.RoleId,
-                SiteId = dto.SiteId
+                SiteId = dto.SiteId,
+                DepartmentId = dto.DepartmentId
             });
 
             await _context.SaveChangesAsync();
@@ -138,6 +149,7 @@ namespace IntranetPortal.Api.Controllers
     {
         public int RoleId { get; set; }
         public int? SiteId { get; set; }
+        public int? DepartmentId { get; set; }
     }
 
     public class PasswordResetDto

@@ -7,6 +7,8 @@ namespace IntranetPortal.Api.Security
     {
         bool HasSitePermission(string permission, int targetSiteId);
         List<int> GetAllowedSites(string permission);
+        bool HasDepartmentPermission(string permission, int targetDepartmentId);
+        List<int> GetAllowedDepartments(string permission);
         bool IsGlobal(string permission);
     }
 
@@ -60,6 +62,36 @@ namespace IntranetPortal.Api.Security
                 }
             }
             return sites;
+        }
+
+        public bool HasDepartmentPermission(string permission, int targetDepartmentId)
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user == null) return false;
+
+            if (user.HasClaim("Permission", "System.FullAccess")) return true;
+            if (user.HasClaim("ScopedPerm", $"{permission}:Global")) return true;
+
+            return user.HasClaim("DeptPerm", $"{permission}:{targetDepartmentId}");
+        }
+
+        public List<int> GetAllowedDepartments(string permission)
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user == null) return new List<int>();
+
+            var claims = user.Claims.Where(c => c.Type == "DeptPerm" && c.Value.StartsWith($"{permission}:"));
+            var departments = new List<int>();
+
+            foreach (var claim in claims)
+            {
+                var parts = claim.Value.Split(':');
+                if (parts.Length == 2 && int.TryParse(parts[1], out int dId))
+                {
+                    departments.Add(dId);
+                }
+            }
+            return departments;
         }
     }
 }

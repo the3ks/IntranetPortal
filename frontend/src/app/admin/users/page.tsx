@@ -30,19 +30,22 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   }
 
   // Parallel fetch Users, Roles, and Sites natively
-  const [usersRes, rolesRes, sitesRes] = await Promise.all([
+  const [usersRes, rolesRes, sitesRes, departmentsRes] = await Promise.all([
     fetchWithAuth(`/api/users?search=${encodeURIComponent(search)}&filter=${encodeURIComponent(filter)}`, { cache: 'no-store' }),
     fetchWithAuth("/api/roles", { cache: 'no-store' }),
-    fetchWithAuth("/api/sites", { cache: 'no-store' })
+    fetchWithAuth("/api/sites", { cache: 'no-store' }),
+    fetchWithAuth("/api/departments", { cache: 'no-store' })
   ]);
 
   let users = [];
   let roles = [];
   let sites = [];
+  let departments = [];
 
   if (usersRes.ok) users = await usersRes.json();
   if (rolesRes.ok) roles = await rolesRes.json();
   if (sitesRes.ok) sites = await sitesRes.json();
+  if (departmentsRes?.ok) departments = await departmentsRes.json();
 
   return (
     <MainLayout>
@@ -121,7 +124,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                             {acc.roles.map((r: any) => (
                               <span key={r.id} className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
                                 <svg className="w-3.5 h-3.5 mr-1.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                                {r.roleName} <span className="mx-1.5 opacity-40">|</span> <span className="text-indigo-900/60 font-medium">{r.siteName}</span>
+                                {r.roleName} <span className="mx-1.5 opacity-40">|</span> <span className="text-indigo-900/60 font-medium">{r.departmentName ? `${r.departmentName} Dept` : r.siteName}</span>
                               </span>
                             ))}
                           </div>
@@ -132,7 +135,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                         )}
                       </td>
                       <td className="px-8 py-5 flex items-center justify-end">
-                        <UserManager user={acc} roles={roles} sites={sites} />
+                        <UserManager user={acc} roles={roles} sites={sites} departments={departments} />
                       </td>
                     </tr>
                   ))}

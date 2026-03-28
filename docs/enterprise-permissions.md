@@ -21,7 +21,8 @@ Our security model breaks access down into four simple layers: **Who you are** (
 1. **Positions (HR Job Titles):** The literal real-world organizational label (e.g., *Chief Executive Officer*). Positions dictate who you are on the roster, but **they do not inherently grant any digital database access**.
 2. **Permissions (Capabilities):** The exact, granular digital actions an account is allowed to take (e.g., `HR.Employee.Create`, `System.FullAccess`).
 3. **Roles (Security Matrices):** A logical "keycard" grouping multiple Permissions together. A Role grants the actual authority to execute tasks (e.g., *Asset Manager* or *HR Editor*).
-4. **Scopes (Site Boundaries):** An optional physical limit declaring precisely *where* a user's Role applies.
+4. **Scopes (Boundaries):** A physical or hierarchical limit declaring precisely *where* a user's Role applies. Scopes can be **Functional** (Site-Wide) or **Hierarchical** (restricted to a specific Department).
+5. **Delegations (Temporary Overrides):** The system's ability to temporarily transfer a specific scoped role from one user to a substitute.
 
 ## 2. How The Matrix Works
 
@@ -39,7 +40,18 @@ Bob is the Global HR Director overseeing all locations.
 - The system binds his Role to a **Global Scope** (`SiteId = null` or Global).
 - **Result:** Because Bob's Site boundary is null (Global), his `HR.Employee.Edit` permission unlocks his authority identically across every single Site in the database.
 
-## 3. Why This Matters
+### Example 3: The Department Head (Hierarchical Scope)
+Charlie is the IT Manager across the entire organization, but he only has authority over his own department (`DepartmentId = IT`).
+- The system assigns Charlie the `Department Manager` Role.
+- The system binds his Role to a **Hierarchical Scope** (`DepartmentId = IT`).
+- **Result:** Charlie is granted the `Payment.Approve` permission, but he can only approve requests where the requester's `DepartmentId` matches his own. He is strictly blocked from approving marketing or sales requests.
+
+## 3. Role Delegation (Temporary Substitutes)
+
+The system supports **Delegation Overrides**, allowing an employee (the *Source User*) to temporarily "lend" their specific scoped role to another worker (the *Substitute User*) for a defined Date Range.
+- **Strict Constraint:** The substitute inherits *only* the specific Permission + Scope being delegated (e.g., *IT Department Approval for New York*), not the Source User’s entire identity or profile capabilities. Once the end date passes, the override automatically expires.
+
+## 4. Why This Matters
 
 This multi-tenant matrix prevents the system from breaking as the company scales. 
 
@@ -47,7 +59,7 @@ If the organization decides to build a brand new *Assets Management* module tomo
 
 ---
 
-## 4. The `ISiteScoped` Implementation Matrix
+## 5. The `ISiteScoped` & `IDepartmentScoped` Implementation Matrix
 
 In Enterprise Multi-Tenant systems, developers frequently make the mistake of using **Entity Framework Core Global Query Filters** (applying `modelBuilder.Entity<x>().HasQueryFilter(...)`). 
 
@@ -55,9 +67,9 @@ In Enterprise Multi-Tenant systems, developers frequently make the mistake of us
 If an HR Manager is assigned `HR.Employee.View` for **London**, but `Announcements.Edit` for **Tokyo**, a global EF framework will see they have access to *both* locations in general. When they attempt to query London Employees, the global DB interceptor will accidentally let them manipulate Tokyo Employees as well, because EF Core does **not** know which specific Controller capability (HR vs Announcements) is currently executing!
 
 ### Our Solution (The C# Extensions):
-To protect granular capabilities and simultaneously prevent developers from forgetting to apply security loops, the Intranet Portal heavily leverages the `ISiteScoped` Database Model Interface.
+To protect granular capabilities and simultaneously prevent developers from forgetting to apply security loops, the Intranet Portal heavily leverages the `ISiteScoped` and `IDepartmentScoped` Database Model Interfaces.
 
-Any time a new enterprise model is built (`WorkOrder.cs`, `Project.cs`), the engineer tags it with `ISiteScoped`.
+Any time a new enterprise model is built (`WorkOrder.cs`, `PaymentRequest.cs`), the engineer tags it with the appropriate scope interfaces.
 
 Inside the API Controller, instead of writing raw SQL `Where()` clauses, they trigger our native extension pipeline:
 ```csharp
