@@ -11,7 +11,7 @@ Welcome to the Intranet Portal's Developer Documentation Hub! This application r
 
 ## Codebase Structure
 - **`/backend`**: Contains the ASP.NET Core 10 Web API (`IntranetPortal.Api`) and the Entity Framework Data layer (`IntranetPortal.Data`).
-- **`/frontend`**: Contains the Next.js 16 Progressive Web App ecosystem utilizing Turbopack.
+- **`/frontend`**: Contains the Next.js 16 Progressive Web App ecosystem. It utilizes **Turbopack** for local development and **Webpack** for reliable production builds (to support the Serwist PWA offline plugin).
 
 ## Running the API
 1. Open a terminal inside `backend/IntranetPortal.Api`.
@@ -19,11 +19,16 @@ Welcome to the Intranet Portal's Developer Documentation Hub! This application r
 3. Run `dotnet ef database update` to sync the entity models.
 4. Run `dotnet run` to boot the web host.
 
-## Running the Portal UI
+## Running the Portal UI (Local Development)
 1. Open a terminal inside `/frontend`.
 2. Ensure you have installed packages using `npm install`.
-3. Run `npm run dev` to start the Next.js process.
-4. Access `http://localhost:3000` in Google Chrome to test progressive features natively.
+3. Run `npm run dev` to start the Next.js local server using Turbopack.
+4. Access `http://localhost:3000` in Google Chrome. *(Note: Offline PWA features are disabled natively in development mode to allow Turbopack to compile smoothly).*
+
+## Building for Production
+To test progressive features natively or prepare for deployment:
+1. Run `npm run build`. This strictly executes `next build --webpack` to generate the `public/sw.js` Service Worker file.
+2. Run `npm run start` to boot the compiled Next.js Node app on port 3000.
 
 ## First-Time Setup & Database Seeding
 

@@ -1,92 +1,60 @@
 ---
-title: "Enterprise Permission Matrix (RBAC)"
+title: "Managing User Access & Employee Roles"
 description: "A high-level guide explaining how Roles, Scopes, and specific Permissions govern access across the Intranet Portal."
-date: "2026-03-20"
-author: "Architecture Team"
+date: "2026-04-01"
+author: "System Administration"
 ---
 
-# Enterprise Permission Matrix
+# Managing User Access & Employee Roles
 
-Welcome to the internal documentation for the Intranet Portal's **Role-Based Access Control (RBAC)** engine. As an Administrator or high-level manager, you have the ability to govern exactly what employees can see and do within this platform.
+Welcome to the Administrator guide for the Intranet Portal's **Role-Based Access Control (RBAC)** system. As a Site Administrator or HR Manager, you have the ability to govern exactly what employees can see and do within this platform.
 
-To ensure extreme flexibility for a multinational or multi-site company, the platform does not rely on simplistic "Admin" or "Staff" labels. Instead, it operates on a highly scalable **Resource-Scoped Permission Matrix**.
+To ensure flexibility for our multinational organization, the platform does not rely on simplistic "Admin" or "Staff" labels. Instead, it operates on a highly scalable **Resource-Scoped Permission Matrix**.
 
-## 1. The Core Concepts & Architecture Diagram
+## 1. The Core Concepts
 
-Our security model breaks access down into four simple layers: **Who you are** (Employee), **What you can do** (Role), and **Where you can do it** (Site Scope).
+Our security model breaks access down into four simple layers: **Who you are** (Employee), **What you can do** (Role), and **Where you can do it** (Scope).
 
 ![Enterprise Permissions Diagram](/rbac-diagram.png)
 
 ### The 4 Pillars of Access:
-1. **Positions (HR Job Titles):** The literal real-world organizational label (e.g., *Chief Executive Officer*). Positions dictate who you are on the roster, but **they do not inherently grant any digital database access**.
-2. **Permissions (Capabilities):** The exact, granular digital actions an account is allowed to take (e.g., `HR.Employee.Create`, `System.FullAccess`).
-3. **Roles (Security Matrices):** A logical "keycard" grouping multiple Permissions together. A Role grants the actual authority to execute tasks (e.g., *Asset Manager* or *HR Editor*).
-4. **Scopes (Boundaries):** A physical or hierarchical limit declaring precisely *where* a user's Role applies. Scopes can be **Functional** (Site-Wide) or **Hierarchical** (restricted to a specific Department).
+1. **Positions (HR Job Titles):** The literal real-world organizational label (e.g., *Chief Executive Officer*). Positions dictate an employee's title on the roster, but **they do not inherently grant any digital access to the portal**.
+2. **Permissions (Capabilities):** The exact, granular digital actions an account is allowed to take (e.g., `Create Employees`, `System Configuration`).
+3. **Roles (Security Matrices):** A logical grouping of multiple Permissions. A Role grants the actual authority to execute tasks in the system (e.g., *Asset Manager* or *HR Editor*). You will assign Roles to employees.
+4. **Scopes (Boundaries):** A physical or hierarchical limit declaring precisely *where* a user's Role applies. Scopes can be **Functional** (Site-Wide, like the London Office) or **Hierarchical** (restricted to a specific Department, like IT).
 5. **Delegations (Temporary Overrides):** The system's ability to temporarily transfer a specific scoped role from one user to a substitute.
 
-## 2. How The Matrix Works
+## 2. Assigning Access: How The Matrix Works
 
-Instead of vaguely granting someone "Admin Access" automatically due to their HR Position, the system strictly relies on assigning an employee a **Role**, and explicitly binding that Role to a **Site Scope**.
+Instead of vaguely granting someone "Admin Access" automatically due to their HR Position, you will assign an employee a **Role**, and explicitly bind that Role to a **Scope**.
 
 ### Example 1: The Local Manager
-Alice is the HR Manager exclusively for the **New York Office** (`SiteId = 1`).
-- The system assigns Alice the `HR Manager` Role.
-- The system bounds her `HR Manager` Role strictly to `SiteId = 1`.
-- **Result:** Alice is securely granted the `HR.Employee.Edit` permission, but the backend API mathematically filters her queries so she can only load and edit employees who *also* belong to the New York office. The server actively refuses to send her data regarding the London Office.
+Alice is the HR Manager exclusively for the **New York Office**.
+- You assign Alice the `HR Manager` Role in the portal.
+- You bind her `HR Manager` Role strictly to the `New York` Site Scope.
+- **Result:** Alice is securely granted the ability to edit employees, but the system filters her view so she can only load and edit employees who *also* belong to the New York office. The system actively hides data regarding the London Office from her view.
 
 ### Example 2: The Global Director
 Bob is the Global HR Director overseeing all locations.
-- The system assigns Bob the `HR Manager` Role.
-- The system binds his Role to a **Global Scope** (`SiteId = null` or Global).
-- **Result:** Because Bob's Site boundary is null (Global), his `HR.Employee.Edit` permission unlocks his authority identically across every single Site in the database.
+- You assign Bob the `HR Manager` Role.
+- You bind his Role to the **Global Scope**.
+- **Result:** Because Bob's scope is Global, his ability to edit employees unlocks his authority identically across every single Site in the database.
 
 ### Example 3: The Department Head (Hierarchical Scope)
-Charlie is the IT Manager across the entire organization, but he only has authority over his own department (`DepartmentId = IT`).
-- The system assigns Charlie the `Department Manager` Role.
-- The system binds his Role to a **Hierarchical Scope** (`DepartmentId = IT`).
-- **Result:** Charlie is granted the `Payment.Approve` permission, but he can only approve requests where the requester's `DepartmentId` matches his own. He is strictly blocked from approving marketing or sales requests.
+Charlie is the IT Manager across the entire organization, but he only has authority over his own department.
+- You assign Charlie the `Department Manager` Role.
+- You bind his Role to the **IT Department Scope**.
+- **Result:** Charlie is granted the `Approve Payments` permission, but he can only approve requests where the requester's Department matches his own. He cannot view or approve marketing or sales requests.
 
 ## 3. Role Delegation (Temporary Substitutes)
 
-The system supports **Delegation Overrides**, allowing an employee (the *Source User*) to temporarily "lend" their specific scoped role to another worker (the *Substitute User*) for a defined Date Range.
-- **Strict Constraint:** The substitute inherits *only* the specific Permission + Scope being delegated (e.g., *IT Department Approval for New York*), not the Source User’s entire identity or profile capabilities. Once the end date passes, the override automatically expires.
+The system supports **Delegation**, allowing an employee to temporarily "lend" their specific scoped role to another worker (the *Substitute User*) while they are on vacation or leave.
+
+- **Strict Constraint:** The substitute inherits *only* the specific Role and Scope being delegated (e.g., *IT Department Approval for New York*). They do not inherit the original user's email access or other private profile capabilities. 
+- **Automatic Expiration:** Once the end date passes, the override automatically expires and the substitute loses the temporary access.
 
 ## 4. Why This Matters
 
-This multi-tenant matrix prevents the system from breaking as the company scales. 
+This Matrix prevents our system from breaking as the company scales. 
 
-If the organization decides to build a brand new *Assets Management* module tomorrow, engineers do not have to rewrite the security ecosystem. The platform simply creates new granular capabilities (like `Assets.Delete`), attaches them to a new custom Role (like `Asset Manager`), and binds that Role to whichever physical Sites your warehouse workers belong to!
-
----
-
-## 5. The `ISiteScoped` & `IDepartmentScoped` Implementation Matrix
-
-In Enterprise Multi-Tenant systems, developers frequently make the mistake of using **Entity Framework Core Global Query Filters** (applying `modelBuilder.Entity<x>().HasQueryFilter(...)`). 
-
-### The EF Core Blindspot:
-If an HR Manager is assigned `HR.Employee.View` for **London**, but `Announcements.Edit` for **Tokyo**, a global EF framework will see they have access to *both* locations in general. When they attempt to query London Employees, the global DB interceptor will accidentally let them manipulate Tokyo Employees as well, because EF Core does **not** know which specific Controller capability (HR vs Announcements) is currently executing!
-
-### Our Solution (The C# Extensions):
-To protect granular capabilities and simultaneously prevent developers from forgetting to apply security loops, the Intranet Portal heavily leverages the `ISiteScoped` and `IDepartmentScoped` Database Model Interfaces.
-
-Any time a new enterprise model is built (`WorkOrder.cs`, `PaymentRequest.cs`), the engineer tags it with the appropriate scope interfaces.
-
-Inside the API Controller, instead of writing raw SQL `Where()` clauses, they trigger our native extension pipeline:
-```csharp
-[HttpGet]
-public async Task<IActionResult> GetWorkOrders() {
-    var orders = await _context.WorkOrders
-                        .ApplySiteScope(_permissionService, "WorkOrders.View")
-                        .ToListAsync();
-    return Ok(orders);
-}
-```
-And to completely block unauthorized Mutating data transfers:
-```csharp
-[HttpPost]
-public async Task<IActionResult> CreateOrder([FromBody] OrderDto dto) {
-    if (!_permissionService.ValidateSiteScope("WorkOrders.Create", dto.SiteId)) return Forbid();
-    // ... Database Execution ...
-}
-```
-This guarantees the active HTTP context is perfectly mapped against the raw underlying capability mathematically, destroying the Mixed-Boundary bleed effect completely natively!
+If the organization decides to build a brand new *Assets Management* module tomorrow, you do not need to call IT to restructure the entire company layout. You simply create a new custom Role (like `Asset Manager`) in the Admin Dashboard, assign the new `Delete Assets` permission to it, and bind that Role to whichever physical Sites your warehouse workers belong to!

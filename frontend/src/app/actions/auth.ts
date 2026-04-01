@@ -46,8 +46,9 @@ export async function loginAction(prevState: any, formData: FormData) {
       path: "/",
       maxAge: 60 * 60 * 8, // 8 hour working session
     });
-  } catch (error) {
-    return { error: "Failed to connect to authentication server." };
+  } catch (error: any) {
+    console.error("LOGIN FETCH ERROR:", error);
+    return { error: `Connection failed: ${error?.message || "Unknown error"}. Target URL: ${API_BASE_URL}` };
   }
 
   // Redirect runs outside try/catch to natively throw the Next.js redirect boundary
