@@ -1,0 +1,28 @@
+# Intranet Portal - AI Assistant Rules
+
+Whenever you are generating, refactoring, or modifying code for this project, you MUST adhere to the following architectural rules:
+
+## 1. Modular Table Naming
+- All database tables must use a prefix indicating their module namespace to avoid collisions and keep the database organized. 
+- **Examples:** Baseline tables use the `Core_` prefix (e.g., `Core_Employees`, `Core_Sites`, `Core_Roles`). 
+- When building a new feature module (e.g., HR, IT, Finance), use the appropriate short prefix (e.g., `HR_Payroll`, `IT_Assets`).
+- This mapping must be explicitly configured in the EF Core Entity Configurations using `.ToTable("Prefix_TableName")`.
+
+## 2. Entity Framework Configurations
+- Do NOT clutter the `ApplicationDbContext.cs` file's `OnModelCreating` method with inline `.ToTable()` or `.HasOne()` declarations.
+- **Rule:** Every module must group its Entity configurations inside the `IntranetPortal.Data/Data/Configurations/{ModuleName}/` directory.
+- Create a specific configuration class implementing `IEntityTypeConfiguration<T>` for each Entity.
+- `ApplicationDbContext` will automatically pick these up via `modelBuilder.ApplyConfigurationsFromAssembly(...)`.
+
+## 3. RBAC Design Guidelines
+- Strictly follow the established Enterprise RBAC (Role-Based Access Control) architecture.
+- Any new module that introduces administrative or secure boundaries must integrate with the existing `UserAccount`, `Role`, `RoleDelegation`, and `Permission` models mapped in `docs/enterprise-permissions.md`.
+- Site and Department scope constraints must be enforced at the API layer for all newly added endpoints.
+
+## 4. Frontend Application Layer (Next.js)
+- Group Server Actions by module feature under `src/app/actions/{ModuleName}.ts`. Do not put all actions in a single massive file.
+- Module-specific UI views should be placed inside a dedicated route directory `src/app/{ModuleName}/`, avoiding cluttering the root UI application.
+
+## 5. Backend HTTP API Layer (.NET)
+- For every new module, create dedicated API Controllers instead of polluting existing ones.
+- When crossing the API boundary, never expose EF Core Entities directly. Use bounded Data Transfer Objects (DTOs) tailored exactly for the module's REST inputs/outputs.
