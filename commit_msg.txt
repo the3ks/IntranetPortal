@@ -1,6 +1,0 @@
-feat(architecture): modularize database schema and establish core guidelines
-
-- Database Refactoring: Implemented a strict modular naming convention by prefixing existing baseline tables with `Core_` (e.g., `Core_UserAccounts`, `Core_Roles`) generating zero data-loss through safe `ALTER TABLE RENAME` operations.
-- Clean DbContext: Stripped bloated inline mappings from `ApplicationDbContext.cs` and segregated them into dedicated `IEntityTypeConfiguration<T>` files under `IntranetPortal.Data/Data/Configurations/Core/`.
-- Architecture Guidelines: Established `docs/architecture-guidelines.md` and `.geminirules` to enforce rigid constraints on future feature modules, including strict UI route splitting, modular Server Actions grouping, and encapsulated API DTO usage.
-- UI Improvement: Updated the main 512x512 PWA app icon to have a properly transparent background instead of solid white corners.
