@@ -1,5 +1,5 @@
 ---
-title: "Developer Setup Guide"
+title: "[DEV] Setup Guide for Developers"
 description: "How to boot and configure the Intranet Portal ecosystem locally."
 date: "2026-03-19"
 author: "Architecture Team"

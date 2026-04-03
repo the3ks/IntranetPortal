@@ -1,5 +1,5 @@
 ---
-title: "Technical Architecture: Enterprise Permission Matrix (RBAC)"
+title: "[DEV] Technical Architecture: Enterprise Permission Matrix (RBAC)"
 description: "A deep-dive engineering guide explaining how the ASP.NET Core backend mathematically enforces Roles, Scopes, and specific Permissions."
 date: "2026-04-01"
 author: "Architecture Team / Engineering Core"

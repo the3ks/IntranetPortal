@@ -1,3 +1,10 @@
+---
+title: "[DEV] Deployment Guide: Ubuntu 24.04 + CloudPanel + Nginx + MariaDB"
+description: "How to deploy the IntranetPortal application (Next.js Frontend + .NET 10 Web API Backend) to an Ubuntu 24.04 server managed by CloudPanel."
+date: "2026-04-04"
+author: "Architecture Team"
+---
+
 # Deployment Guide: Ubuntu 24.04 + CloudPanel + Nginx + MariaDB
 
 This guide outlines the complete process to deploy the **IntranetPortal** application (Next.js Frontend + .NET 10 Web API Backend) to an Ubuntu 24.04 server managed by CloudPanel.

@@ -1,3 +1,10 @@
+---
+title: "[DEV] Architecture & Development Guidelines"
+description: "To understand the architecture and development guidelines of the Intranet Portal."
+date: "2026-04-04"
+author: "Architecture Team"
+---
+
 # Architecture & Development Guidelines
 
 This document serves as the single source of truth for architectural standards, module layout, and design conventions within the Intranet Portal platform. All developers (and automated AI tooling) must follow these rules when extending the application.

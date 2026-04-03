@@ -39,7 +39,17 @@ export function getSortedDocs(): DocMeta[] {
       };
     });
 
-  return allDocs.sort((a, b) => (a.date < b.date ? 1 : -1));
+  return allDocs.sort((a, b) => {
+    const aIsDev = a.title.startsWith("[DEV]");
+    const bIsDev = b.title.startsWith("[DEV]");
+    
+    // If one is DEV and the other is not, the non-DEV one comes first
+    if (aIsDev && !bIsDev) return 1;
+    if (!aIsDev && bIsDev) return -1;
+    
+    // Otherwise, sort by date (newest first)
+    return a.date < b.date ? 1 : -1;
+  });
 }
 
 export function getDocBySlug(slug: string): DocFile | null {
