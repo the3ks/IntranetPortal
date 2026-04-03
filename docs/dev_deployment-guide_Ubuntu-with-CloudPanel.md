@@ -148,3 +148,37 @@ pm2 save
 - Navigate to `https://api.yourdomain.com/swagger` (if Swagger is enabled in production) or an API health check route to ensure the backend is connected to MariaDB.
 - Navigate to `https://yourdomain.com` to check the Next.js frontend.
 - Check CloudPanel's Nginx error logs (available in the CloudPanel UI under the site's Logs tab) if you receive a `502 Bad Gateway`.
+
+---
+
+## 🔄 6. Incrementally Releasing Latest Changes
+
+Once the initial deployment is complete, updating your application to the newest version is streamlined using the custom deployment packager.
+
+**1. Generate Local Packages**
+From the root of your local project, run the python deployment script. To prevent wasting server resources generating massive idempotent scripts, it is strictly advised to explicitly provide the last known production migration using the `--from-migration` argument:
+```bash
+python package-release.py --from-migration {Last_Migration_Name_On_Production}
+```
+This intelligently compiles the application while actively stripping `.env` files and `appsettings.Production.json` to legally safeguard your production passwords. The result is four clean assets inside the `_release/` directory:
+- `backend-release.zip`
+- `frontend-release.zip`
+- `docs-release.zip`
+- `database-update.sql`
+
+**2. Database Migrations**
+The generated `database-update.sql` is strictly idempotent. Open your CloudPanel phpMyAdmin, target your production database, and simply execute this SQL script. It safely applies only table schemas or columns that are missing.
+
+**3. Update Server Files & Restart Services**
+> [!WARNING]
+> You MUST stop the backend application before extracting `.dll` files, otherwise Ubuntu will throw a "Text file busy" error and block the overwrite.
+
+1. Stop the .NET Service via SSH:
+   `sudo systemctl stop intranet-api.service`
+2. Upload and extract `backend-release.zip` to your API folder in CloudPanel, replacing the existing files.
+3. Start the .NET Service again:
+   `sudo systemctl start intranet-api.service`
+4. Upload and extract `docs-release.zip` directly to the `/docs/` folder.
+5. Upload and extract `frontend-release.zip` to your Frontend folder.
+   - Re-run `npm install` and `npm run build` in the frontend directory.
+   - Restart the PM2 frontend process: `pm2 restart intranet-frontend`.
