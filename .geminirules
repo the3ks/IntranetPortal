@@ -26,3 +26,6 @@ Whenever you are generating, refactoring, or modifying code for this project, yo
 ## 5. Backend HTTP API Layer (.NET)
 - For every new module, create dedicated API Controllers instead of polluting existing ones.
 - When crossing the API boundary, never expose EF Core Entities directly. Use bounded Data Transfer Objects (DTOs) tailored exactly for the module's REST inputs/outputs.
+
+## 6. Audit Logging Guidelines
+- Audit logs MUST be implemented as localized, module-specific tables (e.g., `AM_AssetAuditLogs` with a hard FK to `AM_Assets`) rather than a single generic global audit table. This enforces strict modularity and high-performance indexing.

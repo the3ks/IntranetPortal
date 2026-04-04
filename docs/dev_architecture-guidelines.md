@@ -61,3 +61,12 @@ When bridging the gap between the database layer and frontend, stick to module-o
 
 - **Controllers**: Group HTTP endpoints by logical module. Create dedicated controllers rather than modifying expansive existing ones (use `IntranetPortal.Api/Controllers/{ModuleName}Controller.cs`).
 - **Data Transfer Objects (DTOs)**: NEVER leak EF Database Entities directly through the API to the Frontend. You must serialize them to domain-specific DTOs to avoid circular reference loops and accidental security leaks.
+
+---
+
+## 6. Audit Logging
+
+When creating modules that require tracking of state changes or historical ledgers (e.g., tracking when an asset is moved or returned), **do not** use a generic, centralized generic audit table (e.g., `Core_AuditLogs` with string-based `EntityId`s). 
+
+- **Module-Specific Audit Tables:** Implement strongly-typed audit tables localized to the specific module (e.g., `AM_AssetAuditLogs`). 
+- **Referential Integrity:** Ensure the log table uses explicit Foreign Keys pointing back to the core transactional table (e.g., `AssetId` INT FK). This preserves performance, guarantees cascading data integrity, and adheres to our strict modular boundaries allowing for future microservice extraction.
