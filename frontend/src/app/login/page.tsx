@@ -10,26 +10,26 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-           <div className="w-20 h-20 bg-white rounded-[20px] flex items-center justify-center shadow-lg overflow-hidden transform rotate-2 ring-1 ring-gray-100">
+           <div className="w-20 h-20 bg-card rounded-[20px] flex items-center justify-center shadow-lg overflow-hidden transform rotate-2 ring-1 ring-border/50">
              <Image src="/icon-512x512.png" alt="App Logo" width={80} height={80} className="object-cover" priority />
            </div>
         </div>
-        <h2 className="mt-8 text-center text-4xl font-extrabold text-gray-900 tracking-tight">
+        <h2 className="mt-8 text-center text-4xl font-extrabold text-foreground tracking-tight">
           {siteConfig.name}
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-foreground/80">
           Sign in to access your dashboard
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-8 shadow-2xl sm:rounded-3xl border border-gray-100">
+        <div className="bg-card py-8 px-8 shadow-2xl sm:rounded-3xl border border-border/50">
           <form className="space-y-6" action={formAction}>
             {state?.error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl">
+              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-xl">
                 <div className="flex">
                   <div className="ml-3">
                     <p className="text-sm text-red-700 font-medium">{state.error}</p>
@@ -39,7 +39,7 @@ export default function LoginPage() {
             )}
             
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-foreground/90">
                 Email address
               </label>
               <div className="mt-1">
@@ -50,13 +50,13 @@ export default function LoginPage() {
                   autoComplete="email"
                   required
                   defaultValue="admin@company.com"
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors text-gray-900 font-medium"
+                  className="appearance-none block w-full px-4 py-3 border border-border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors text-foreground font-medium"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-foreground/90">
                 Password
               </label>
               <div className="mt-1 relative">
@@ -67,12 +67,12 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   required
                   defaultValue="Admin123!"
-                  className="appearance-none block w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors text-gray-900 font-medium"
+                  className="appearance-none block w-full px-4 py-3 pr-12 border border-border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors text-foreground font-medium"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-foreground/40 hover:text-foreground/80 focus:outline-none transition-colors"
                 >
                   {showPassword ? (
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -94,9 +94,9 @@ export default function LoginPage() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-border rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
                   Remember me
                 </label>
               </div>
@@ -122,10 +122,10 @@ export default function LoginPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
+                <div className="w-full border-t border-border/50" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-white text-gray-400 font-medium">Secure Intranet Access</span>
+                <span className="px-3 bg-card text-foreground/40 font-medium">Secure Intranet Access</span>
               </div>
             </div>
           </div>

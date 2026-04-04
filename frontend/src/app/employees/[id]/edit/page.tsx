@@ -31,10 +31,10 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
           &larr; Back to Employees Registry
         </Link>
         
-        <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-gray-100">
-          <header className="mb-10 pb-8 border-b border-gray-100">
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Edit Personnel Profile</h1>
-            <p className="mt-2 text-gray-500">Modify demographic or organizational assignment structures securely.</p>
+        <div className="bg-card p-8 sm:p-12 rounded-3xl shadow-sm border border-border/50">
+          <header className="mb-10 pb-8 border-b border-border/50">
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Edit Personnel Profile</h1>
+            <p className="mt-2 text-foreground/60">Modify demographic or organizational assignment structures securely.</p>
           </header>
 
           <EmployeeFormClient 

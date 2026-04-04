@@ -26,7 +26,7 @@ export default function SiteFilter({
             router.push(`?`);
           }
         }}
-        className={`px-4 py-2.5 rounded-xl border border-gray-200 outline-none text-sm font-semibold transition-all shadow-sm ${disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-70' : 'bg-white text-gray-900 border-blue-200 hover:border-blue-400 focus:ring-4 focus:ring-blue-500/20'} min-w-[240px] appearance-none`}
+        className={`px-4 py-2.5 rounded-xl border outline-none text-sm font-semibold transition-all shadow-sm ${disabled ? 'bg-background/50 text-foreground/40 border-border/50 cursor-not-allowed opacity-70' : 'bg-background text-foreground border-border/50 hover:border-blue-400 focus:ring-4 focus:ring-blue-500/20'} min-w-[240px] appearance-none`}
         style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em`, paddingRight: `2.5rem` }}
       >
         <option value="">All Authorized Sites</option>

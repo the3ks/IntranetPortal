@@ -35,20 +35,24 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icon-512x512.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

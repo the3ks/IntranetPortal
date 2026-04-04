@@ -201,14 +201,6 @@ export default function Sidebar({ user }: { user?: any }) {
 
         </nav>
 
-        {activeModule !== "home" && (
-          <div className="pt-6 mt-auto border-t border-gray-800">
-            <Link href="/" className="hover:bg-gray-800 focus:ring-2 focus:ring-blue-500/50 outline-none hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 text-gray-400 shadow-sm active:scale-95 group">
-              <svg className="w-5 h-5 text-gray-500 group-hover:-translate-x-1 group-hover:text-blue-400 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-              <span className="font-bold tracking-wide">Universal Portal</span>
-            </Link>
-          </div>
-        )}
       </aside>
     </>
   );

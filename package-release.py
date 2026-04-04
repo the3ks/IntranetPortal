@@ -46,6 +46,10 @@ def package_backend():
     print("--- Packaging Backend ---")
     publish_dir = os.path.join(BACKEND_API_DIR, "publish")
     
+    # Clean up previous publish directory to avoid recursive copy errors (MSB3030)
+    if os.path.exists(publish_dir):
+        shutil.rmtree(publish_dir)
+    
     # 1. Publish the .NET Application
     run_command("dotnet publish -c Release -o ./publish", cwd=BACKEND_API_DIR)
     

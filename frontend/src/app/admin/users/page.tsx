@@ -50,27 +50,27 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto space-y-8">
-        <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-card p-6 rounded-3xl shadow-sm border border-border/50">
           <div>
-            <p className="text-gray-500 mt-2 text-base">Manage software logins and geometric role permissions securely.</p>
+            <p className="text-foreground/60 mt-2 text-base">Manage software logins and geometric role permissions securely.</p>
           </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 divide-y sm:divide-y-0 sm:divide-x divide-border/50">
             <div className="pt-4 sm:pt-0 sm:pr-6 w-full sm:w-auto">
               <SearchFilter placeholder="Search personnel by name or email..." />
             </div>
 
             <div className="pt-4 sm:pt-0 sm:px-6 flex items-center space-x-2 w-full sm:w-auto">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Access Scope:</span>
-              <div className="bg-gray-100 p-1 rounded-xl flex space-x-1">
+              <span className="text-xs font-bold text-foreground/40 uppercase tracking-wider">Access Scope:</span>
+              <div className="bg-background p-1 rounded-xl flex space-x-1">
                 <Link
                   href={`?filter=elevated${search ? '&search=' + encodeURIComponent(search) : ''}`}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${filter === 'elevated' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${filter === 'elevated' ? 'bg-card text-blue-700 shadow-sm' : 'text-foreground/60 hover:text-foreground/90'}`}
                 >
                   Elevated Rights
                 </Link>
                 <Link
                   href={`?filter=basic${search ? '&search=' + encodeURIComponent(search) : ''}`}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${filter === 'basic' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${filter === 'basic' ? 'bg-card text-foreground shadow-sm' : 'text-foreground/60 hover:text-foreground/90'}`}
                 >
                   Basic Logins
                 </Link>
@@ -79,28 +79,28 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
           </div>
         </header>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-card rounded-3xl shadow-sm border border-border/50 overflow-hidden">
           {users.length === 0 ? (
             <div className="p-16 text-center">
-              <div className="w-20 h-20 mx-auto bg-gray-50 text-gray-300 rounded-full flex items-center justify-center mb-6">
+              <div className="w-20 h-20 mx-auto bg-background/50 text-border rounded-full flex items-center justify-center mb-6">
                 <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No active credentials mapped</h3>
-              <p className="text-gray-500 max-w-sm mx-auto">Either no personnel match your search intent, or no users fit this specific operational parameter.</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">No active credentials mapped</h3>
+              <p className="text-foreground/60 max-w-sm mx-auto">Either no personnel match your search intent, or no users fit this specific operational parameter.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50/80 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500 font-bold">
+                  <tr className="bg-background/50 border-b border-border/50 text-xs uppercase tracking-wider text-foreground/60 font-bold">
                     <th className="px-8 py-5">Software Identity</th>
                     <th className="px-8 py-5">Structural Bindings</th>
                     <th className="px-8 py-5 text-right w-64">Security Operations</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border/50">
                   {users.map((acc: any) => (
                     <tr key={acc.id} className="hover:bg-blue-50/30 transition-colors group">
                       <td className="px-8 py-5">
@@ -109,12 +109,12 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                             {acc.employeeName !== "System Account" ? acc.employeeName.substring(0, 2).toUpperCase() : "SA"}
                           </div>
                           <div>
-                            <div className="font-bold text-gray-900 flex items-center gap-2">
+                            <div className="font-bold text-foreground flex items-center gap-2">
                               {acc.employeeName}
                               {!acc.isActive && <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Disabled</span>}
                               {Number(acc.id) !== currentUserId && <PasswordResetButton user={acc} />}
                             </div>
-                            <div className="text-sm font-medium text-gray-500 mt-0.5">{acc.email}</div>
+                            <div className="text-sm font-medium text-foreground/60 mt-0.5">{acc.email}</div>
                           </div>
                         </div>
                       </td>
@@ -129,7 +129,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                             ))}
                           </div>
                         ) : (
-                          <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-background text-foreground/60 border border-border/50">
                             Basic Permissions Only
                           </span>
                         )}

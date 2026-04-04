@@ -6,7 +6,7 @@ export default async function MainLayout({ children, hideSidebar = false }: { ch
   const user = await getUserSession();
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex">
+    <div className="min-h-screen bg-background flex">
       {!hideSidebar && <Sidebar user={user} />}
       <div className={`flex-1 flex flex-col transition-all ${!hideSidebar ? 'md:ml-72' : ''}`}>
         <Header user={user} />

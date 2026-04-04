@@ -18,11 +18,11 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
           &larr; Back to Documentation Hub
         </Link>
         
-        <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
-          <header className="mb-10 pb-8 border-b border-gray-100">
-            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">{doc.title}</h1>
-            <p className="mt-4 text-xl text-gray-500">{doc.description}</p>
-            <div className="mt-8 flex items-center text-sm text-gray-400 font-medium">
+        <div className="bg-card p-8 sm:p-12 rounded-3xl shadow-sm border border-border/50 relative overflow-hidden">
+          <header className="mb-10 pb-8 border-b border-border/50">
+            <h1 className="text-4xl font-extrabold text-foreground tracking-tight leading-tight">{doc.title}</h1>
+            <p className="mt-4 text-xl text-foreground/60">{doc.description}</p>
+            <div className="mt-8 flex items-center text-sm text-foreground/40 font-medium">
               <span className="flex items-center">
                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center mr-2 text-[10px] font-bold">
                      {doc.author.substring(0,2).toUpperCase()}
@@ -34,7 +34,7 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
             </div>
           </header>
           
-          <article className="prose prose-blue prose-lg max-w-none text-gray-700 prose-headings:font-bold prose-a:text-blue-600 hover:prose-a:text-blue-500 prose-img:rounded-xl">
+          <article className="prose dark:prose-invert prose-blue prose-lg max-w-none text-foreground/90 prose-headings:font-bold prose-a:text-blue-600 hover:prose-a:text-blue-500 prose-img:rounded-xl">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{doc.content}</ReactMarkdown>
           </article>
         </div>

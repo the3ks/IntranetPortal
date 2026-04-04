@@ -69,7 +69,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto space-y-8">
-        <header className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+        <header className="bg-card p-6 sm:p-8 rounded-3xl shadow-sm border border-border/50 space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-end gap-6">
             {/* Left side: Search & Filter Tools */}
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-full justify-end">
@@ -95,7 +95,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
           </div>
         </header>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-card rounded-3xl shadow-sm border border-border/50 overflow-hidden">
           {employees.length === 0 ? (
             <div className="p-16 text-center">
               <div className="w-20 h-20 mx-auto bg-blue-50 text-blue-300 rounded-full flex items-center justify-center mb-6">
@@ -103,21 +103,21 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No employees found</h3>
-              <p className="text-gray-500 max-w-sm mx-auto">Create your first staff member to populate the platform's database.</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">No employees found</h3>
+              <p className="text-foreground/60 max-w-sm mx-auto">Create your first staff member to populate the platform's database.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50/80 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500 font-bold">
+                  <tr className="bg-background/50 border-b border-border/50 text-xs uppercase tracking-wider text-foreground/60 font-bold">
                     <th className="px-8 py-5">Personnel</th>
                     <th className="px-8 py-5">Department</th>
                     <th className="px-8 py-5">Site / Location</th>
                     <th className="px-8 py-5 text-right w-32">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border/50">
                   {employees.map((emp) => (
                     <tr key={emp.id} className="hover:bg-blue-50/40 transition-colors group">
                       <td className="px-8 py-5">
@@ -126,8 +126,8 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
                             {emp.fullName.substring(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{emp.fullName}</div>
-                            <div className="text-sm font-medium text-gray-500 mt-1">{emp.positionName || 'No Title'} <span className="mx-2 text-gray-300">•</span> {emp.email}</div>
+                            <div className="font-bold text-foreground group-hover:text-blue-500 transition-colors">{emp.fullName}</div>
+                            <div className="text-sm font-medium text-foreground/60 mt-1">{emp.positionName || 'No Title'} <span className="mx-2 text-border">•</span> {emp.email}</div>
                           </div>
                         </div>
                       </td>
@@ -147,13 +147,13 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
                       </td>
                       <td className="px-8 py-5 flex items-center justify-end space-x-2">
                         {hasSitePermission("HR.Employee.Edit", emp.siteId) && (
-                          <Link href={`/employees/${emp.id}/edit`} className="text-gray-400 hover:text-blue-600 transition-colors font-semibold text-sm bg-white hover:bg-blue-50 px-4 py-2 rounded-lg border border-transparent hover:border-blue-100">
+                          <Link href={`/employees/${emp.id}/edit`} className="text-foreground/60 hover:text-blue-500 transition-colors font-semibold text-sm bg-background hover:bg-blue-500/10 px-4 py-2 rounded-lg border border-transparent hover:border-blue-500/20">
                             Edit
                           </Link>
                         )}
                         {hasSitePermission("HR.Employee.Edit", emp.siteId) && (
                           <form action={deleteEmployeeAction.bind(null, emp.id)}>
-                            <button type="submit" className="text-gray-400 hover:text-rose-600 transition-colors font-semibold text-sm bg-white hover:bg-rose-50 px-4 py-2 rounded-lg border border-transparent hover:border-rose-100">Delete</button>
+                            <button type="submit" className="text-foreground/60 hover:text-rose-500 transition-colors font-semibold text-sm bg-background hover:bg-rose-500/10 px-4 py-2 rounded-lg border border-transparent hover:border-rose-500/20">Delete</button>
                           </form>
                         )}
                       </td>

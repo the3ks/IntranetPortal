@@ -51,21 +51,21 @@ export default function AssetRequestsView({ type }: AssetRequestsViewProps) {
       case "Fulfilled":
         return <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Fulfilled</span>;
       default:
-        return <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">{status}</span>;
+        return <span className="px-3 py-1 bg-background text-foreground/90 text-xs font-semibold rounded-full">{status}</span>;
     }
   };
 
-  if (loading) return <div className="h-32 flex items-center justify-center text-gray-400">Loading Requisition Engine...</div>;
+  if (loading) return <div className="h-32 flex items-center justify-center text-foreground/40">Loading Requisition Engine...</div>;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      <div className="flex justify-between items-center bg-gray-50 p-6 rounded-2xl border border-gray-100">
+      <div className="flex justify-between items-center bg-background/50 p-6 rounded-2xl border border-border/50">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-foreground">
             {type === "mine" ? "My Requisitions" : "Team Approvals"}
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-foreground/60 mt-1">
             {type === "mine" ? "Track the status of hardware and accessories you requested." : "Review business-need justifications for your department."}
           </p>
         </div>
@@ -76,38 +76,38 @@ export default function AssetRequestsView({ type }: AssetRequestsViewProps) {
         )}
       </div>
 
-      <div className="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-3xl">
-        <table className="min-w-full divide-y divide-gray-100">
-          <thead className="bg-gray-50/80 backdrop-blur-sm">
+      <div className="overflow-hidden bg-card border border-border/50 shadow-sm rounded-3xl">
+        <table className="min-w-full divide-y divide-border/50">
+          <thead className="bg-background/50 backdrop-blur-sm">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Item Details</th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Requested For</th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
-              {type === "approvals" && <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Action</th>}
+              <th className="px-6 py-4 text-left text-xs font-bold text-foreground/60 uppercase tracking-wider">Item Details</th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-foreground/60 uppercase tracking-wider">Requested For</th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-foreground/60 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-foreground/60 uppercase tracking-wider">Date</th>
+              {type === "approvals" && <th className="px-6 py-4 text-right text-xs font-bold text-foreground/60 uppercase tracking-wider">Action</th>}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-50">
+          <tbody className="bg-card divide-y divide-gray-50">
             {requests.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
+                <td colSpan={5} className="px-6 py-12 text-center text-foreground/40">
                   No requests found in this queue.
                 </td>
               </tr>
             ) : (
               requests.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
+                <tr key={r.id} className="hover:bg-background/50/50 transition-colors">
                   <td className="px-6 py-5 whitespace-nowrap">
-                    <div className="text-sm font-bold text-gray-900">{r.type === "SerializedAsset" ? (r.modelName || r.categoryName) : r.accessoryName}</div>
-                    <div className="text-xs text-gray-500 truncate max-w-[200px]" title={r.justification}>{r.justification}</div>
+                    <div className="text-sm font-bold text-foreground">{r.type === "SerializedAsset" ? (r.modelName || r.categoryName) : r.accessoryName}</div>
+                    <div className="text-xs text-foreground/60 truncate max-w-[200px]" title={r.justification}>{r.justification}</div>
                   </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">
+                  <td className="px-6 py-5 whitespace-nowrap text-sm text-foreground/90">
                     {r.requestedForName}
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
                     <StatusBadge status={r.status} />
                   </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500 font-mono">
+                  <td className="px-6 py-5 whitespace-nowrap text-sm text-foreground/60 font-mono">
                     {new Date(r.createdAt).toLocaleDateString()}
                   </td>
                   {type === "approvals" && (
