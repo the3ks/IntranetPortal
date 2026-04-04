@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IntranetPortal.Data.Data;
 using IntranetPortal.Data.Models;
+using IntranetPortal.Data.Models.Assets;
 
 namespace IntranetPortal.Api.Controllers
 {
@@ -128,6 +129,83 @@ namespace IntranetPortal.Api.Controllers
             { 
                 Message = "Quick Setup transaction executed successfully.",
                 Stats = new { sites = sitesAdded, departments = deptsAdded, roles = rolesAdded, positions = posAdded, permissions = permsAdded }
+            });
+        }
+
+        [HttpPost("seed-assets")]
+        public async Task<IActionResult> SeedAssets()
+        {
+            var site = await _context.Sites.FirstOrDefaultAsync();
+            var dept = await _context.Departments.FirstOrDefaultAsync();
+            if (site == null || dept == null) return BadRequest("Please run QuickSetup first to generate a Site and Department.");
+
+            int categoriesAdded = 0, modelsAdded = 0, assetsAdded = 0, accessoriesAdded = 0;
+
+            // 1. Categories
+            var catLaptop = await _context.AssetCategories.FirstOrDefaultAsync(c => c.Name == "Laptops") ?? new AssetCategory { Name = "Laptops", RequiresApproval = true, IsActive = true };
+            var catMonitor = await _context.AssetCategories.FirstOrDefaultAsync(c => c.Name == "Monitors") ?? new AssetCategory { Name = "Monitors", RequiresApproval = true, IsActive = true };
+            var catAcc = await _context.AssetCategories.FirstOrDefaultAsync(c => c.Name == "Peripherals") ?? new AssetCategory { Name = "Peripherals", RequiresApproval = false, IsActive = true };
+            
+            if (catLaptop.Id == 0) { _context.AssetCategories.Add(catLaptop); categoriesAdded++; }
+            if (catMonitor.Id == 0) { _context.AssetCategories.Add(catMonitor); categoriesAdded++; }
+            if (catAcc.Id == 0) { _context.AssetCategories.Add(catAcc); categoriesAdded++; }
+            await _context.SaveChangesAsync();
+
+            // 2. Models
+            var modelXps = await _context.AssetModels.FirstOrDefaultAsync(m => m.Name == "XPS 15") ?? new AssetModel { Manufacturer = "Dell", Name = "XPS 15", CategoryId = catLaptop.Id };
+            var modelT14 = await _context.AssetModels.FirstOrDefaultAsync(m => m.Name == "ThinkPad T14") ?? new AssetModel { Manufacturer = "Lenovo", Name = "ThinkPad T14", CategoryId = catLaptop.Id };
+            var modelU2720Q = await _context.AssetModels.FirstOrDefaultAsync(m => m.Name == "UltraSharp U2720Q") ?? new AssetModel { Manufacturer = "Dell", Name = "UltraSharp U2720Q", CategoryId = catMonitor.Id };
+            
+            if (modelXps.Id == 0) { _context.AssetModels.Add(modelXps); modelsAdded++; }
+            if (modelT14.Id == 0) { _context.AssetModels.Add(modelT14); modelsAdded++; }
+            if (modelU2720Q.Id == 0) { _context.AssetModels.Add(modelU2720Q); modelsAdded++; }
+            await _context.SaveChangesAsync();
+
+            // 3. Assets
+            if (!await _context.Assets.AnyAsync())
+            {
+                _context.Assets.AddRange(
+                    new Asset { AssetTag = "IT-LPT-001", SerialNumber = "XPS15-A1", ModelId = modelXps.Id, Status = AssetStatus.Available, SiteId = site.Id, DepartmentId = dept.Id, PurchaseDate = DateTime.UtcNow.AddMonths(-6) },
+                    new Asset { AssetTag = "IT-LPT-002", SerialNumber = "XPS15-A2", ModelId = modelXps.Id, Status = AssetStatus.Available, SiteId = site.Id, DepartmentId = dept.Id, PurchaseDate = DateTime.UtcNow.AddMonths(-5) },
+                    new Asset { AssetTag = "IT-LPT-003", SerialNumber = "TPT14-B1", ModelId = modelT14.Id, Status = AssetStatus.Assigned, SiteId = site.Id, DepartmentId = dept.Id, PurchaseDate = DateTime.UtcNow.AddMonths(-2) },
+                    new Asset { AssetTag = "IT-LPT-004", SerialNumber = "TPT14-B2", ModelId = modelT14.Id, Status = AssetStatus.InMaintenance, SiteId = site.Id, DepartmentId = dept.Id, PurchaseDate = DateTime.UtcNow.AddMonths(-2) },
+                    new Asset { AssetTag = "IT-MON-001", SerialNumber = "U2720Q-001", ModelId = modelU2720Q.Id, Status = AssetStatus.Available, SiteId = site.Id, DepartmentId = dept.Id }
+                );
+                assetsAdded += 5;
+                await _context.SaveChangesAsync();
+            }
+
+            // 4. Accessory
+            if (!await _context.Accessories.AnyAsync(a => a.Name == "Logitech MX Master 3"))
+            {
+                _context.Accessories.Add(new Accessory
+                {
+                    Name = "Logitech MX Master 3",
+                    CategoryId = catAcc.Id,
+                    TotalQuantity = 50,
+                    AvailableQuantity = 45, // Simulating 5 checked out
+                    MinStockThreshold = 10,
+                    SiteId = site.Id,
+                    DepartmentId = dept.Id
+                });
+                
+                _context.Accessories.Add(new Accessory
+                {
+                    Name = "Dell Universal Dock (D6000)",
+                    CategoryId = catAcc.Id,
+                    TotalQuantity = 20,
+                    AvailableQuantity = 2, // Simulating Low Stock!
+                    MinStockThreshold = 5,
+                    SiteId = site.Id,
+                    DepartmentId = dept.Id
+                });
+                accessoriesAdded += 2;
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { 
+                Message = "Assets Data seeded successfully.",
+                Stats = new { categories = categoriesAdded, models = modelsAdded, assets = assetsAdded, accessories = accessoriesAdded }
             });
         }
 

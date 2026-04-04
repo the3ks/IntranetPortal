@@ -151,7 +151,7 @@ namespace IntranetPortal.Api.Controllers
 
             // Distinct DeptPerm (Hierarchical) constraints
             var deptClaims = rolePerms.Where(x => x.DepartmentId.HasValue)
-                .Select(x => $"{x.PermName}:{x.DepartmentId.Value}").Distinct();
+                .Select(x => $"{x.PermName}:{x.DepartmentId!.Value}").Distinct();
             foreach (var dp in deptClaims)
             {
                 claims.Add(new Claim("DeptPerm", dp));

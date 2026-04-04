@@ -52,6 +52,8 @@ Because the UI is built with Next.js App Router, new UI features must respect th
 
 - **Server Actions**: Group them exclusively by domain/module inside the `src/app/actions/` directory (e.g. `src/app/actions/{ModuleName}.ts`). Avoid generic "helper" files that become dumping grounds.
 - **Directories**: Sub-modules should reside in their own route directories (e.g. `src/app/{ModuleName}/`). Tightly bound custom components should either sit directly next to the page (`src/app/{ModuleName}/components/`) or be distinctly identifiable in a global components folder.
+- **Deep Routing over State Tabs**: Do not construct monolithic single-page components that use simple React state to swap between "tabs" or major views. Instead, leverage the Next.js App Router deeply. Create dedicated nested routes (e.g., `src/app/{ModuleName}/feature/page.tsx`) and use `layout.tsx` for shared contextual scaffolding (like headers).
+- **Sidebar Integration**: The global interface integrates heavily with `Sidebar.tsx`. When building a new module, you must register its route prefix within the `activeModule` state in the Sidebar and define its child navigation links, completely negating the need for inline component-level tabs.
 
 ---
 
@@ -70,3 +72,22 @@ When creating modules that require tracking of state changes or historical ledge
 
 - **Module-Specific Audit Tables:** Implement strongly-typed audit tables localized to the specific module (e.g., `AM_AssetAuditLogs`). 
 - **Referential Integrity:** Ensure the log table uses explicit Foreign Keys pointing back to the core transactional table (e.g., `AssetId` INT FK). This preserves performance, guarantees cascading data integrity, and adheres to our strict modular boundaries allowing for future microservice extraction.
+
+---
+
+## 7. Frontend Iconography
+
+To maintain a lightweight dependency footprint, flawless client-side rendering speed, and strict visual consistency across the entire Intranet Portal, do **not** install 3rd-party React components for icons.
+
+- **No Third-Party Icon Packages:** Packages like `lucide-react`, `@heroicons/react`, or `font-awesome` are strictly prohibited within the `package.json`.
+- **Inline SVGs ONLY:** UI Modules must use raw, inline `<svg>` elements exact to the Heroicons specification.
+- **Styling:** By default, SVGs should use `fill="none" stroke="currentColor"` and `strokeWidth={2}` (or `strokeWidth={2.5}` for prominent icons) seamlessly inheriting text styles from their parent Tailwind classes.
+
+---
+
+## 8. Frontend Layout Standardization
+
+In order to guarantee that module boundaries behave consistently across the platform irrespective of the domain, enforce standardized root wrappers for any nested module entry point (`layout.tsx` or `page.tsx`).
+
+- **Consistent Container Dimensions:** Every major module (e.g., The Hub, Assets Management, Administration) must wrap its contextual endpoints within a standardized responsive boundary: `<div className="max-w-7xl mx-auto space-y-8">`.
+- **No Arbitrary Padding Overrides:** Do not inject stray native paddings (like `p-8` or `px-4`) or nested structural boxes (`min-h-[600px] bg-white`) explicitly into the module's absolute root layout tree unless absolutely necessary for a distinct visual split. Adhering to the universal wrapper ensures identically aligned white spaces and scroll-bars universally across the application ecosystem.

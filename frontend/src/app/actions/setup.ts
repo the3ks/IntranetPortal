@@ -41,3 +41,22 @@ export async function importEmployeesCsvAction(formData: FormData) {
     return JSON.stringify({ success: false, error: error.message });
   }
 }
+
+export async function seedAssetsAction() {
+  try {
+    const res = await fetchWithAuth("/api/setup/seed-assets", {
+      method: "POST"
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return JSON.stringify({ success: true, data });
+    } else {
+      let errStr = "Failed API call";
+      try { errStr = await res.text(); } catch {}
+      return JSON.stringify({ success: false, error: errStr });
+    }
+  } catch (error: any) {
+    return JSON.stringify({ success: false, error: error.message });
+  }
+}

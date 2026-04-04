@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { submitQuickSetupAction, importEmployeesCsvAction } from "@/app/actions/setup";
+import { submitQuickSetupAction, importEmployeesCsvAction, seedAssetsAction } from "@/app/actions/setup";
 
 export default function QuickSetupForm() {
   const [loading, setLoading] = useState(false);
@@ -245,6 +245,37 @@ export default function QuickSetupForm() {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 space-y-6 mt-8 relative overflow-hidden mb-12">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-bl-full -mr-10 -mt-10 pointer-events-none"></div>
+        <header className="relative z-10">
+          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Batch Assets Importer (CSV)</h2>
+          <p className="text-gray-500 mt-1">Upload a CSV payload or execute quick data seeds to mass-generate hardware payloads and stockpiles.</p>
+        </header>
+        <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10">
+          <button type="button" onClick={async () => {
+            if (!confirm("Seed demo Assets Data? Ensure you have at least 1 Site and Department created first.")) return;
+            setLoading(true);
+            try {
+              const res = await seedAssetsAction();
+              const result = JSON.parse(res);
+              if (result.success) {
+                alert(result.data.message);
+              } else {
+                alert("Failed to seed assets: " + result.error);
+              }
+            } finally {
+              setLoading(false);
+            }
+          }} className="px-6 py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+            Seed Native Demo Assets
+          </button>
+          <div className="text-gray-400 text-sm italic py-2">
+            Additional CSV endpoints routing logic to come...
+          </div>
+        </div>
       </div>
 
     </div>

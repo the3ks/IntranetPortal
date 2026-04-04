@@ -22,6 +22,17 @@ namespace IntranetPortal.Data.Data
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<RoleDelegation> RoleDelegations { get; set; }
 
+        // Assets Management Module
+        public DbSet<IntranetPortal.Data.Models.Assets.AssetCategory> AssetCategories { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.AssetModel> AssetModels { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.Asset> Assets { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.AssetAssignment> AssetAssignments { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.AssetMaintenance> AssetMaintenanceRecords { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.AssetAuditLog> AssetAuditLogs { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.Accessory> Accessories { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.AccessoryCheckout> AccessoryCheckouts { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.AssetRequest> AssetRequests { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

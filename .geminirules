@@ -22,6 +22,8 @@ Whenever you are generating, refactoring, or modifying code for this project, yo
 ## 4. Frontend Application Layer (Next.js)
 - Group Server Actions by module feature under `src/app/actions/{ModuleName}.ts`. Do not put all actions in a single massive file.
 - Module-specific UI views should be placed inside a dedicated route directory `src/app/{ModuleName}/`, avoiding cluttering the root UI application.
+- **Deep Routing over State Tabs**: Avoid building monolithic React tab systems for major navigation. Instead, use Next.js App Router nested routing (e.g. `{ModuleName}/sub-feature/page.tsx`) with a `layout.tsx` for shared headers.
+- **Sidebar Integration**: The application depends on `components/layout/Sidebar.tsx` for navigation context. When a new module is created, register its namespace within the Sidebar logic to display its appropriate sub-page links instead of creating inline tabs.
 
 ## 5. Backend HTTP API Layer (.NET)
 - For every new module, create dedicated API Controllers instead of polluting existing ones.
@@ -29,3 +31,11 @@ Whenever you are generating, refactoring, or modifying code for this project, yo
 
 ## 6. Audit Logging Guidelines
 - Audit logs MUST be implemented as localized, module-specific tables (e.g., `AM_AssetAuditLogs` with a hard FK to `AM_Assets`) rather than a single generic global audit table. This enforces strict modularity and high-performance indexing.
+
+## 7. UI SVG Iconography
+- Do NOT install or use 3rd-party React components for icons (e.g. `lucide-react`, `@heroicons/react`).
+- Maintain visual consistency by pasting raw, inline `<svg>` elements matching the exact visual style of the application (e.g. Heroicons, `strokeWidth={2}`).
+
+## 8. Frontend Layouts
+- Root wrappers (`layout.tsx`/`page.tsx`) across all major modules MUST strictly use `<div className="max-w-7xl mx-auto space-y-8">`.
+- Do NOT inject arbitrary native paddings (e.g., `p-8`, `px-4`) or nested structural containers (e.g., `bg-white min-h-[600px]`) into these entry points unless specifically overriding the master layout array.

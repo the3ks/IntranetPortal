@@ -17,9 +17,11 @@ export default function Sidebar({ user }: { user?: any }) {
   const permissionsClaim = user?.Permission || user?.permission || [];
   const permissions = Array.isArray(permissionsClaim) ? permissionsClaim : [permissionsClaim];
   const canViewEmployees = isAdmin || permissions.includes("HR.Employee.View");
+  const canManageAssets = isAdmin || permissions.includes("Perm:Assets.Manage");
 
   let activeModule = "home";
   if (pathname.startsWith("/admin")) activeModule = "admin";
+  else if (pathname.startsWith("/assets")) activeModule = "assets";
   else if (pathname.startsWith("/docs") || pathname.startsWith("/employees") || pathname.startsWith("/departments") || pathname.startsWith("/sites") || pathname.startsWith("/announcements")) activeModule = "hub";
 
   const isLinkActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -27,6 +29,7 @@ export default function Sidebar({ user }: { user?: any }) {
   let sidebarTitle = siteConfig.name;
   if (activeModule === "hub") sidebarTitle = "The Hub";
   if (activeModule === "admin") sidebarTitle = "Administration";
+  if (activeModule === "assets") sidebarTitle = "Assets Center";
 
   return (
     <>
@@ -51,17 +54,27 @@ export default function Sidebar({ user }: { user?: any }) {
 
       {/* Sidebar Content */}
       <aside className={`fixed inset-y-0 left-0 bg-gray-900 text-gray-300 w-72 p-6 shadow-2xl transform transition-transform duration-300 ease-in-out z-40 ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 flex flex-col`}>
-        <div className="flex items-center space-x-3 mb-10 mt-2">
-          <div className="w-10 h-10 rounded-xl shadow-lg flex items-center justify-center overflow-hidden border border-gray-700/50 bg-gray-800 shrink-0">
-            {activeModule === "hub" ? (
-              <svg className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-            ) : activeModule === "admin" ? (
-              <svg className="w-6 h-6 text-amber-500 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            ) : (
-              <Image src="/icon-512x512.png" alt="App Logo" width={40} height={40} className="object-cover group-hover:scale-105 transition-transform" priority />
-            )}
+        <div className="flex items-center justify-between mb-10 mt-2">
+          <div className="flex items-center space-x-3 overflow-hidden">
+            <div className="w-10 h-10 rounded-xl shadow-lg flex items-center justify-center overflow-hidden border border-gray-700/50 bg-gray-800 shrink-0">
+              {activeModule === "hub" ? (
+                <svg className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+              ) : activeModule === "assets" ? (
+                <svg className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              ) : activeModule === "admin" ? (
+                <svg className="w-6 h-6 text-amber-500 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              ) : (
+                <Image src="/icon-512x512.png" alt="App Logo" width={40} height={40} className="object-cover group-hover:scale-105 transition-transform" priority />
+              )}
+            </div>
+            <span className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 truncate">{sidebarTitle}</span>
           </div>
-          <span className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 truncate">{sidebarTitle}</span>
+
+          {(activeModule === "assets" || activeModule === "hub") && (
+            <Link href={activeModule === "assets" ? "/assets/wiki" : "/docs"} className="text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 p-1.5 rounded-lg transition-colors ml-2 shrink-0" title="Module Documentation">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </Link>
+          )}
         </div>
         
         <nav className="flex flex-col space-y-2 flex-1 overflow-y-auto overflow-x-hidden elegant-scrollbar pb-4 pr-1">
@@ -130,6 +143,59 @@ export default function Sidebar({ user }: { user?: any }) {
                 <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
                 <span>Permission Registry</span>
               </Link>
+            </>
+          )}
+
+          {/* Context: Assets */}
+          {activeModule === "assets" && (
+            <>
+              <div className="pt-2 pb-2">
+                <p className="px-4 text-[11px] font-bold text-emerald-400 uppercase tracking-widest opacity-80">Hardware & Equipment</p>
+              </div>
+              <Link href="/assets" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${pathname === '/assets' ? 'bg-gray-800 text-white shadow-sm' : ''}`}>
+                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                <span>My Assets</span>
+              </Link>
+
+              <Link href="/assets/requests" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${isLinkActive('/assets/requests') ? 'bg-gray-800 text-white shadow-sm' : ''}`}>
+                <svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                <span>Requisition Center</span>
+              </Link>
+
+              <Link href="/assets/approvals" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${isLinkActive('/assets/approvals') ? 'bg-gray-800 text-white shadow-sm' : ''}`}>
+                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>Pending Approvals</span>
+              </Link>
+
+              {canManageAssets && (
+                <>
+                  <div className="pt-6 pb-2">
+                    <p className="px-4 text-[11px] font-bold text-rose-400 uppercase tracking-widest opacity-80">Administration</p>
+                  </div>
+
+                  <Link href="/assets/fulfillment" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${isLinkActive('/assets/fulfillment') ? 'bg-gray-800 text-white shadow-sm' : ''}`}>
+                    <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                    <span>Fulfillment Queue</span>
+                  </Link>
+
+                  <Link href="/assets/inventory" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${isLinkActive('/assets/inventory') ? 'bg-gray-800 text-white shadow-sm' : ''}`}>
+                    <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
+                    <span>Hardware Inventory</span>
+                  </Link>
+
+                  <Link href="/assets/accessories" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${isLinkActive('/assets/accessories') ? 'bg-gray-800 text-white shadow-sm' : ''}`}>
+                    <svg className="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    <span>Accessory Stockpile</span>
+                  </Link>
+
+                  <Link href="/assets/dictionaries" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${isLinkActive('/assets/dictionaries') ? 'bg-gray-800 text-white shadow-sm' : ''}`}>
+                    <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    <span>System Dictionaries</span>
+                  </Link>
+                </>
+              )}
+
+
             </>
           )}
 
