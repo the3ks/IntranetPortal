@@ -13,9 +13,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-           <div className="w-20 h-20 bg-card rounded-[20px] flex items-center justify-center shadow-lg overflow-hidden transform rotate-2 ring-1 ring-border/50">
-             <Image src="/icon-512x512.png" alt="App Logo" width={80} height={80} className="object-cover" priority />
-           </div>
+          <div className="w-20 h-20 bg-card rounded-[20px] flex items-center justify-center shadow-lg overflow-hidden transform ring-1 ring-border/50">
+            <Image src={process.env.NODE_ENV === 'development' ? '/icon-512x512-purple.png' : '/icon-512x512-blue.png'} alt="App Logo" width={80} height={80} className="object-cover" priority />
+          </div>
         </div>
         <h2 className="mt-8 text-center text-4xl font-extrabold text-foreground tracking-tight">
           {siteConfig.name}
@@ -37,7 +37,7 @@ export default function LoginPage() {
                 </div>
               </div>
             )}
-            
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-foreground/90">
                 Email address
@@ -118,7 +118,7 @@ export default function LoginPage() {
               </button>
             </div>
           </form>
-          
+
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

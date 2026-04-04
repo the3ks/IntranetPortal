@@ -20,5 +20,5 @@ export function proxy(request: NextRequest) {
 
 // Ensure middleware applies everywhere except static assets and API routes
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|icon-.*).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|manifest.json|manifest.webmanifest|sw.js|icon-.*).*)"],
 };
