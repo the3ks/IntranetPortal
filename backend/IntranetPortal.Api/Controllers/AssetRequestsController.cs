@@ -24,7 +24,7 @@ namespace IntranetPortal.Api.Controllers
         [HttpGet("my-requests")]
         public async Task<IActionResult> GetMyRequests()
         {
-            var empId = int.Parse(User.FindFirst("EmployeeId")?.Value ?? "0");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
 
             var requests = await _context.AssetRequests
                 .Include(r => r.RequestedCategory)
@@ -83,7 +83,7 @@ namespace IntranetPortal.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRequest([FromBody] AssetRequestCreateDto dto)
         {
-            var empId = int.Parse(User.FindFirst("EmployeeId")?.Value ?? "0");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
 
             var request = new AssetRequest
             {
@@ -121,7 +121,7 @@ namespace IntranetPortal.Api.Controllers
             var request = await _context.AssetRequests.FindAsync(id);
             if (request == null) return NotFound();
 
-            var empId = int.Parse(User.FindFirst("EmployeeId")?.Value ?? "0");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
 
             request.Status = RequestStatus.PendingFulfillment;
             request.ManagerApprovedByEmployeeId = empId;
@@ -138,7 +138,7 @@ namespace IntranetPortal.Api.Controllers
             var request = await _context.AssetRequests.FindAsync(id);
             if (request == null) return NotFound();
 
-            var empId = int.Parse(User.FindFirst("EmployeeId")?.Value ?? "0");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
 
             request.Status = RequestStatus.Fulfilled;
             request.FulfilledByEmployeeId = empId;
