@@ -135,11 +135,14 @@ If PM2 is not already installed on your server, install it globally first:
 ```bash
 npm install -g pm2
 ```
-Then start your Next.js frontend server:
+Then start your Next.js frontend server and configure it to run on system boot:
 ```bash
 pm2 start npm --name "intranet-frontend" -- run start
 pm2 save
+pm2 startup
 ```
+*(Note: Running `pm2 startup` will output a `sudo env PATH...` command. You must copy and run that output to finalize the boot configuration.)*
+
 *(Alternatively, you can start it directly from the CloudPanel UI if "App Service" is enabled).*
 
 ---

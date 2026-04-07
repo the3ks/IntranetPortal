@@ -100,7 +100,7 @@ export default async function AnnouncementsPage() {
                     </form>
                   )}
                 </div>
-                <div className="prose dark:prose-invert prose-lg max-w-none text-foreground/80 leading-relaxed whitespace-pre-wrap font-medium">
+                <div className="prose dark:prose-invert prose-lg max-w-none text-foreground/80 prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground leading-relaxed whitespace-pre-wrap font-medium">
                   {ann.content}
                 </div>
               </article>

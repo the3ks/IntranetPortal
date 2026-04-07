@@ -34,7 +34,7 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
             </div>
           </header>
           
-          <article className="prose dark:prose-invert prose-blue prose-lg max-w-none text-foreground/90 prose-headings:font-bold prose-a:text-blue-600 hover:prose-a:text-blue-500 prose-img:rounded-xl">
+          <article className="prose dark:prose-invert prose-blue prose-lg max-w-none text-foreground/90 prose-headings:text-foreground prose-headings:font-bold prose-strong:text-foreground prose-code:text-foreground prose-a:text-blue-600 hover:prose-a:text-blue-500 prose-img:rounded-xl">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{doc.content}</ReactMarkdown>
           </article>
         </div>

@@ -22,7 +22,7 @@ export default function AssetsWikiPage() {
             How it works
           </h2>
         </div>
-        <div className="p-8 prose dark:prose-invert max-w-none prose-emerald prose-p:text-foreground/80">
+        <div className="p-8 prose dark:prose-invert max-w-none prose-emerald prose-p:text-foreground/80 text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground">
           
           <h3 className="text-xl font-bold mt-0 mb-4 border-b border-border/50 pb-2">1. For General Employees</h3>
           <p className="mb-6">
