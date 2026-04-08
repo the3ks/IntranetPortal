@@ -19,5 +19,5 @@ The following major architectural features have been designated for future devel
 - **Department/Teams:** once having employee in department/team, cannot delete department/team, nor move them to another site
 - **Sites:** once having department/team in site, cannot delete site
 
-
+## 3. Audit Logs in each module
 

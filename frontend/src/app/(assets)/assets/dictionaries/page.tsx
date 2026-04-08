@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getCategoriesAction, getModelsAction, createCategoryAction, createModelAction, updateCategoryAction, toggleCategoryAction, updateModelAction, toggleModelAction } from "../../actions/assets";
+import { getCategoriesAction, getModelsAction, createCategoryAction, createModelAction, updateCategoryAction, toggleCategoryAction, updateModelAction, toggleModelAction } from "@/app/actions/assets";
 
 export default function DictionariesPage() {
   const [categories, setCategories] = useState<any[]>([]);

@@ -1,24 +1,17 @@
 import { fetchWithAuth } from "@/lib/api";
-import { updateEmployeeAction } from "@/app/actions/employees";
+import { createEmployeeAction } from "@/app/actions/employees";
 import MainLayout from "@/components/layout/MainLayout";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import EmployeeFormClient from "@/app/employees/EmployeeFormClient";
+import EmployeeFormClient from "@/app/(core)/employees/EmployeeFormClient";
 
-export default async function EditEmployeePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  
-  const [empRes, sitesRes, deptsRes, posRes, teamsRes] = await Promise.all([
-    fetchWithAuth(`/api/employees/${id}`, { cache: 'no-store' }),
+export default async function NewEmployeePage() {
+  const [sitesRes, deptsRes, posRes, teamsRes] = await Promise.all([
     fetchWithAuth("/api/sites"),
     fetchWithAuth("/api/departments"),
     fetchWithAuth("/api/positions"),
     fetchWithAuth("/api/teams")
   ]);
 
-  if (!empRes.ok) notFound();
-
-  const employee = await empRes.json();
   const sites = sitesRes.ok ? await sitesRes.json() : [];
   const depts = deptsRes.ok ? await deptsRes.json() : [];
   const positions = posRes.ok ? await posRes.json() : [];
@@ -33,20 +26,20 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
         
         <div className="bg-card p-8 sm:p-12 rounded-3xl shadow-sm border border-border/50">
           <header className="mb-10 pb-8 border-b border-border/50">
-            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Edit Personnel Profile</h1>
-            <p className="mt-2 text-foreground/60">Modify demographic or organizational assignment structures securely.</p>
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Onboard Personnel</h1>
+            <p className="mt-2 text-foreground/60">Add a new team member and assign their dimensional matrix parameters.</p>
           </header>
 
           <EmployeeFormClient 
-            employee={employee}
             sites={sites} 
             depts={depts} 
             positions={positions} 
             teams={teams} 
-            action={updateEmployeeAction} 
+            action={createEmployeeAction} 
           />
         </div>
       </div>
     </MainLayout>
   );
 }
+

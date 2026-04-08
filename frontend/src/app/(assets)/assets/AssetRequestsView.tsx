@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { approveRequestAction, getAssetRequestsAction } from "../actions/assets";
+import { approveRequestAction, getAssetRequestsAction } from "@/app/actions/assets";
 
 interface AssetRequestsViewProps {
   type: "mine" | "approvals";
