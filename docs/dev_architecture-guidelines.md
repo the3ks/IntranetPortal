@@ -18,7 +18,7 @@ The Intranet Portal utilizes a **Hybrid Modular Architecture** bridging a Modula
 - **The Core Monolith:** Modules that are deeply coupled with existing core functionalities (like Core and Assets Management) reside in the single main repository. They share a frontend deployment and a backend API, but their codebase must be strictly segregated into domain folders under `(core)` and `(assets)` in Next.js, and respective namespace folders in the `.NET` backend. 
 - **Standalone Microservices:** Modules that are naturally isolated (e.g., Drink Ordering) or have distinct scaling requirements should be developed as independent repositories. They will contain their own Next.js frontend, .NET backend API, and a completely separate database, integrating with the Core Monolith for authentication and shared state via APIs. *(For a complete breakdown of this module structure, refer to [docs/dev_architecture-microservices.md](dev_architecture-microservices.md)).*
 
-![Hybrid Modular Architecture Diagram](media/hybrid-modular-architecture.jpg)
+![Hybrid Modular Architecture Diagram](media/hybrid-architecture-modular-monolith-n-microservice.jpg)
 ---
 
 ## 2. Modular Database Schema & Naming
