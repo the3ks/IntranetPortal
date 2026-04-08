@@ -13,7 +13,7 @@ Welcome to the engineering documentation for the Intranet Portal's **Role-Based 
 
 Our security model mathematically maps access down into four database entities: **Who you are** (Employee), **What you can do** (Role), and **Where you can do it** (Site Scope).
 
-![RBAC Permissions](media/RBAC-permissions.png)
+![RBAC Permissions](media/RBAC-permission-matrix.jpg)
 
 ### The Security Primitives:
 1. **Positions (HR Job Titles):** The real-world organizational label. **These do not inherently grant any digital database access**. Do not write AuthZ handlers or `[Authorize(Roles = "...")]` attributes against Positions.

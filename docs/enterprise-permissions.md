@@ -15,7 +15,7 @@ To ensure flexibility for our multinational organization, the platform does not 
 
 Our security model breaks access down into four simple layers: **Who you are** (Employee), **What you can do** (Role), and **Where you can do it** (Scope).
 
-![RBAC Permissions](media/RBAC-permissions.png)
+![RBAC Permissions](media/RBAC-permission-matrix.jpg)
 
 ### The 4 Pillars of Access:
 1. **Positions (HR Job Titles):** The literal real-world organizational label (e.g., *Chief Executive Officer*). Positions dictate an employee's title on the roster, but **they do not inherently grant any digital access to the portal**.
