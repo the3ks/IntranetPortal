@@ -13,7 +13,7 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto py-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         <Link href="/docs" className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center mb-8 bg-blue-50 w-fit px-4 py-2 rounded-full transition-colors">
           &larr; Back to Documentation Hub
         </Link>

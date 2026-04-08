@@ -7,7 +7,7 @@ export default function DocsIndex() {
 
   return (
     <MainLayout>
-      <div className="max-w-5xl mx-auto py-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         <div className="mb-10">
           <p className="mt-2 text-lg text-foreground/60">Official technical specifications and organizational guides.</p>
         </div>
