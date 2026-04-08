@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getAssetsListAction } from "../actions/assets";
+import { getAssetsListAction } from "@/app/actions/assets";
 
 export default function MyAssetsView() {
   const [assets, setAssets] = useState<any[]>([]);

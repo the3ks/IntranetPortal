@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getAccessoriesAction, getCategoriesAction, createAccessoryAction, addAccessoryStockAction } from "../../actions/assets";
+import { getAccessoriesAction, getCategoriesAction, createAccessoryAction, addAccessoryStockAction } from "@/app/actions/assets";
 
 export default function AccessoriesPage() {
   const [accessories, setAccessories] = useState<any[]>([]);

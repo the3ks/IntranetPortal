@@ -22,10 +22,13 @@ Before writing any code, formulate a raw blueprint of the module's core function
 ### Step 2: The Architecture Proposal
 With the brain dump complete, immediately draft an **Implementation Plan**. **Stop here and do not write code yet.** 
 
-Translate the raw requirements into our specific architectural paradigm (refer to `architecture-guidelines.md`):
-- **Database Architecture:** Define the exact tables and map out their `Prefix_` names (e.g., `IT_Tickets`).
+First, determine the **Deployment Strategy**: Evaluate the module's nature and decide if it belongs inside the **Core Monolith** or if it should be built as a **Standalone Microservice** (refer to `dev_architecture-guidelines.md` and `dev_architecture-microservices.md`).
+
+Translate the raw requirements into the chosen architectural paradigm:
+- **Deployment Context:** Explicitly state whether this will be segregated via a Next.js Route Group in the Monolith or scaffolded in a distinct external Git repository.
+- **Database Architecture:** If monolithic, define the exact tables and map out their modular `Prefix_` names (e.g., `IT_Tickets`). If a microservice, map out the initial entities of the standalone DB.
 - **REST API Map:** Define the API Controller boundaries and strictly encapsulate the Request/Response payloads into secure DTOs.
-- **Frontend Map:** Determine where the Server Actions will live (`src/app/actions/{Module}.ts`) and the primary UI route hierarchy (`src/app/{Module}/`).
+- **Frontend Map:** Determine where the Server Actions will live and map either the internal Monolith UI hierarchy (`src/app/({module})/`) or the external Micro-Frontend routes.
 
 ### Step 3: Iteration and Refinement
 Subject the Implementation Plan to peer review (or AI iteration). 
@@ -37,6 +40,7 @@ Subject the Implementation Plan to peer review (or AI iteration).
 
 ### Step 4: Systematic Execution
 Once the Implementation Plan is "green-lit", break down the execution into precise technical phases:
-1. **Database Layer:** Implement the Entities and their `IEntityTypeConfiguration<T>` files. Generate and successfully apply the Entity Framework core migrations.
-2. **API/Backend Layer:** Build out the explicit Module Controllers and their associated DTO serialization patterns. Run isolated endpoints tests if needed.
-3. **Frontend Layer:** Scaffold the Next.js routes, wrap up your UI components, and bind them to the module's dedicated Server Actions.
+1. **Infrastructure Scaffolding:** Skip if monolithic. If building a microservice, provision the new independent Git repository, base Next.js UI, and empty database schema.
+2. **Database Layer:** Implement the Entities and their `IEntityTypeConfiguration<T>` files. Generate and successfully apply the Entity Framework core migrations.
+3. **API/Backend Layer:** Build out the explicit Module Controllers and their associated DTO serialization patterns. Verify JWT token pipelines if communicating across services.
+4. **Frontend Layer:** Scaffold the Next.js internal Route Groups (or external Micro-Frontend application layers), wrap up UI components, and bind them to the specific Server Actions.

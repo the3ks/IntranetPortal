@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getFulfillmentQueueAction, fulfillRequestAction, getAssetsListAction } from "../../actions/assets";
+import { getFulfillmentQueueAction, fulfillRequestAction, getAssetsListAction } from "@/app/actions/assets";
 
 export default function FulfillmentPage() {
   const [requests, setRequests] = useState<any[]>([]);

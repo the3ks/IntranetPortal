@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getAssetsListAction, getModelsAction, createAssetAction } from "../../actions/assets";
+import { getAssetsListAction, getModelsAction, createAssetAction } from "@/app/actions/assets";
 
 export default function InventoryPage() {
   const [assets, setAssets] = useState<any[]>([]);
