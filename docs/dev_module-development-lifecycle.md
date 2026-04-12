@@ -40,7 +40,7 @@ Subject the Implementation Plan to peer review (or AI iteration).
 
 ### Step 4: Systematic Execution
 Once the Implementation Plan is "green-lit", break down the execution into precise technical phases:
-1. **Infrastructure Scaffolding:** Skip if monolithic. If building a microservice, provision the new independent Git repository, base Next.js UI, and empty database schema.
+1. **Infrastructure Scaffolding:** Skip if monolithic. If building a microservice, provision the new independent Git repository. **Crucial Step:** You must manually copy the `docs/dev_architecture-microservice-cheat-sheet.md` document from the Core codebase natively into your new isolated workspace *before* requesting any AI assistance. This mathematically ensures the agent remembers all JWT integration rules, structural CSS properties, and cross-application database constraints.
 2. **Database Layer:** Implement the Entities and their `IEntityTypeConfiguration<T>` files. Generate and successfully apply the Entity Framework core migrations.
-3. **API/Backend Layer:** Build out the explicit Module Controllers and their associated DTO serialization patterns. Verify JWT token pipelines if communicating across services.
+3. **API/Backend Layer:** Build out the explicit Module Controllers and their associated DTO serialization patterns. Verify JWT token pipelines if communicating across services. **Crucial Integration:** Ensure your APIs explicitly support "System.FullAccess" RBAC fallbacks, and strictly structure a resilient `IHostedService` retry-loop to auto-register any custom modular RBAC Permissions to the core Monolith synchronously upon deployment.
 4. **Frontend Layer:** Scaffold the Next.js internal Route Groups (or external Micro-Frontend application layers), wrap up UI components, and bind them to the specific Server Actions.

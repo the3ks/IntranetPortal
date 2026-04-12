@@ -7,7 +7,20 @@ author: "Architecture Team"
 
 # The Modular Monolith: Architecture & Structure
 
-As part of the Intranet Portal's Hybrid Architecture strategy, tightly-coupled core components and foundational legacy systems proudly reside within a central "Modular Monolith." 
+## The Big Picture: The "Central Sun"
+The Intranet Portal uses a **Hybrid Architecture**, where this Modular Monolith serves as the "Central Sun." It inherently owns the absolute source of truth for global Authentication (JWTs), HR Employee Data, and the Enterprise RBAC Matrix. All other standalone Microservices operate as satellites orbiting this core codebase and database.
+
+**When to Build in the Monolith:**
+You MUST build your new feature inside this Modular Monolith if:
+1. It actively mutates or tightly orchestrates foundational System/HR data.
+2. It requires immediate, native, transactional SQL consistency (e.g., hard `INNER JOINS`) against core HR/Site/Role/User tables.
+3. It represents a mission-critical, deeply integrated platform feature (e.g., Assets Management, Main Hub).
+
+*(If your feature does NOT meet these strict criteria, you should instead scaffold it as a detached satellite. Refer to `dev_architecture-microservices.md` for guidance).*
+
+---
+
+As part of the Intranet Portal's Hybrid Architecture strategy, tightly-coupled core components and foundational legacy systems proudly reside within this central **Modular Monolith.** 
 
 While these components exist in the exact same Git repository and connect to a completely shared SQL database, they **must** strictly enforce logical, domain-driven boundaries to prevent massive tangles of spaghetti code as the company scales.
 

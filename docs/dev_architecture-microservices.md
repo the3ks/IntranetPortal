@@ -7,6 +7,21 @@ author: "Architecture Team"
 
 # Standalone Microservices: Architecture & Structure
 
+## The Big Picture: The "Independent Satellites"
+The Intranet Portal utilizes a **Hybrid Architecture.** While the Core Monolith manages central global truths (Authentication, System Admin, Core HR mapping), we extract distinct functional domain boundaries into Standalone Microservices. 
+
+These microservices act as completely decoupled "Satellites." They orchestrate their own physical databases and isolated Git repositories, yet they securely bridge back into the enterprise ecosystem by blindly verifying the Monolith's JWT `auth_token` cookies, and recursively auto-registering their local RBAC custom permissions securely to the Monolith via network jobs.
+
+**When to Build a Microservice:**
+You MUST extract your domain out to a Standalone Microservice if:
+1. It is functionally distinct and highly isolated (e.g., *Drink Ordering*, *Vehicle Booking*, *Helpdesk*).
+2. It can natively tolerate loose SQL relationships, storing pure `EmployeeId` generic keys without demanding hard SQL `INNER JOINS` against core tables.
+3. The domain has independent SLA, traffic, or deployment lifecycles separate from the core company intranet platform stability.
+
+*(If your feature does NOT meet these criteria—for instance, if it directly mutates foundational enterprise hierarchy—you must build it natively inside the central `IntranetPortal`. Refer to `dev_architecture-modular-monolith.md` for guidance).*
+
+---
+
 As the Intranet Portal ecosystem expands, significantly isolated domain boundaries (e.g., *Drink Ordering*, *HR Leaves*, *IT Helpdesk*) will be extracted into **Standalone Microservice Modules**. 
 
 This document defines the structural requirements, integrations, and operational boundaries for building any new Microservice that connects to the Core Monolith.

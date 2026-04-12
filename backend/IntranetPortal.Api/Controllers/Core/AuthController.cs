@@ -90,11 +90,38 @@ namespace IntranetPortal.Api.Controllers
                 _context.Roles.Add(adminRole);
             }
 
+            // Create a dummy environment framework to mount the Employee
+            var testSite = await _context.Sites.FirstOrDefaultAsync(s => s.Name == "Global HQ");
+            if (testSite == null)
+            {
+                testSite = new IntranetPortal.Data.Models.Site { Name = "Global HQ", Address = "HQ" };
+                _context.Sites.Add(testSite);
+                await _context.SaveChangesAsync();
+            }
+
+            var testDept = await _context.Departments.FirstOrDefaultAsync(d => d.Name == "IT Department");
+            if (testDept == null)
+            {
+                testDept = new IntranetPortal.Data.Models.Department { Name = "IT Department", Description = "IT Department", Site = testSite };
+                _context.Departments.Add(testDept);
+                await _context.SaveChangesAsync();
+            }
+
+            var adminEmployee = new IntranetPortal.Data.Models.Employee
+            {
+                FullName = "System Administrator",
+                Email = "admin@company.com",
+                Site = testSite,
+                Department = testDept
+            };
+            _context.Employees.Add(adminEmployee);
+
             var admin = new IntranetPortal.Data.Models.UserAccount
             {
                 Email = "admin@company.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
                 IsActive = true,
+                Employee = adminEmployee,
                 UserRoles = new List<IntranetPortal.Data.Models.UserRole>
                 {
                     new IntranetPortal.Data.Models.UserRole { Role = adminRole, SiteId = null } // SiteId null = Global Scope!
