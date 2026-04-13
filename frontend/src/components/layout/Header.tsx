@@ -19,6 +19,7 @@ export default function Header({ user }: { user?: any }) {
     const lastSegment = segments[segments.length - 1];
     
     const titleMap: Record<string, string> = {
+      modules: "Module Registry",
       docs: "Wiki / Documentation",
       employees: "Employee Directory",
       departments: "Organization Departments",

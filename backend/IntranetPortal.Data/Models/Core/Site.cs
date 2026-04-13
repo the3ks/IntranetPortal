@@ -8,5 +8,6 @@ namespace IntranetPortal.Data.Models
         
         // Navigation properties
         public List<Employee> Employees { get; set; } = new();
+        public ICollection<SystemModule> AllowedModules { get; set; } = new List<SystemModule>();
     }
 }

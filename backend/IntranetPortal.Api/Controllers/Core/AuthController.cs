@@ -29,6 +29,7 @@ namespace IntranetPortal.Api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var user = await _context.UserAccounts
+                .Include(u => u.Employee)
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
                         .ThenInclude(r => r.RolePermissions)
@@ -143,7 +144,10 @@ namespace IntranetPortal.Api.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("EmployeeId", user.EmployeeId?.ToString() ?? "")
+                new Claim("EmployeeId", user.EmployeeId?.ToString() ?? ""),
+                new Claim("SiteId", user.Employee?.SiteId.ToString() ?? ""),
+                new Claim("DepartmentId", user.Employee?.DepartmentId.ToString() ?? ""),
+                new Claim("TeamId", user.Employee?.TeamId?.ToString() ?? "")
             };
 
             var allUserRoles = user.UserRoles.ToList();

@@ -62,5 +62,14 @@ Because the microservice is completely detached, it cannot share the local authe
 
 ## 5. API Layer
 
-- **RESTful Endpoints**: The backend will be a standalone minimal .NET Web API project.
+- **RESTful Endpoints**: The backend will be a standalone .NET Web API project utilizing **Controllers with direct DbContext injection** (the `Fat Controller` pattern) to perfectly mirror the Core Monolith's architecture. No Minimal APIs.
 - **CORS Configuration**: If the microservice is hosted on a distinct subdomain (`drinks.intranet.com`), its .NET API must implement strict Cross-Origin Resource Sharing (CORS) rules allowing the frontend origin to communicate securely.
+
+## 6. Cross-Boundary Data Scoping (Hierarchies)
+
+Standalone Microservices do not directly access the `Sites`, `Departments`, or `Teams` lookup tables in the Core database. To enforce identical hierarchical boundaries securely:
+
+- **JWT The Central Carrier:** The Core Monolith inherently injects `SiteId`, `DepartmentId`, and `TeamId` string claims directly into the `auth_token` JWT payload upon user login.
+- **Reporting & Data Isolation:** Microservices process scoping locally based on two standard options:
+  1. **The Frozen Snapshot (Data Denormalization - Preferred):** The Microservice permanently stores `SiteId`, `DepartmentId`, and `TeamId` as generic integers natively on its local transactional tables (e.g., `DrinkOrders`). This allows blazingly fast querying natively within the microservice controller (`db.Orders.Where(o => o.DepartmentId == claimsDeptId)`) inherently freezing the financial/eventual consistency of the hierarchy permanently at the time of the transaction.
+  2. **Microservice Federation (API Aggregation):** If dynamic hierarchy evaluation is strictly required (e.g., querying real-time members of a department), the Microservice uses `IHttpClientFactory` to seamlessly request the current array of `EmployeeIds` from a Core backend Internal API, and subsequently filters its local SQL table dynamically.

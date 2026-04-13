@@ -13,6 +13,7 @@ namespace IntranetPortal.Data.Data
         public DbSet<Team> Teams { get; set; }
         public DbSet<Announcement> Announcements { get; set; }
         public DbSet<Site> Sites { get; set; }
+        public DbSet<SystemModule> SystemModules { get; set; }
         public DbSet<UserAccount> UserAccounts { get; set; }
 
         // Advanced Scalable Permission Matrix

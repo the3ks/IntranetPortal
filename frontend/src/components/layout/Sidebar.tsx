@@ -1,13 +1,27 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { siteConfig } from "@/config/site";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 
+
 export default function Sidebar({ user }: { user?: any }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname() || "";
+  const [dynamicModules, setDynamicModules] = useState<any[]>([]);
+
+  useEffect(() => {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5254";
+    fetch(`${backendUrl}/api/modules`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        // Filter out the Monolith's standard static hardcoded directories
+        const filtered = data.filter((m: any) => !["The Hub", "Assets Management", "Administration"].includes(m.name));
+        setDynamicModules(filtered);
+      })
+      .catch(() => {});
+  }, []);
   
   // Safely map the role variable regardless of string vs array Claim permutation from .NET Core
   const userRoleClaim = user?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || user?.role || user?.Role;
@@ -114,14 +128,24 @@ export default function Sidebar({ user }: { user?: any }) {
               </Link>
 
               {/* Microservices external bridge */}
-              <div className="pt-6 pb-2">
-                <p className="px-4 text-[11px] font-bold text-fuchsia-400 uppercase tracking-widest opacity-80">Employee Services</p>
-              </div>
-              <a href={process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '/drinks'} className="hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3">
-                <svg className="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span>Drink Ordering</span>
-                <svg className="w-4 h-4 ml-auto opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-              </a>
+              {dynamicModules.length > 0 && (
+                <>
+                  <div className="pt-6 pb-2">
+                    <p className="px-4 text-[11px] font-bold text-fuchsia-400 uppercase tracking-widest opacity-80">Employee Services</p>
+                  </div>
+                  {dynamicModules.map(mod => {
+                    const isExternal = mod.url.startsWith("http");
+                    const LinkTag = isExternal ? "a" : Link;
+                    return (
+                      <LinkTag key={mod.id} href={mod.url} className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3`}>
+                        <div dangerouslySetInnerHTML={{ __html: mod.iconSvg }} className="flex-shrink-0 text-fuchsia-400 [&>svg]:w-5 [&>svg]:h-5" />
+                        <span>{mod.name}</span>
+                        {isExternal && <svg className="w-4 h-4 ml-auto opacity-50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>}
+                      </LinkTag>
+                    );
+                  })}
+                </>
+              )}
             </>
           )}
 
@@ -152,6 +176,10 @@ export default function Sidebar({ user }: { user?: any }) {
               <Link href="/admin/permissions" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${isLinkActive('/admin/permissions') ? 'bg-gray-800 text-white shadow-sm' : ''}`}>
                 <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
                 <span>Permission Registry</span>
+              </Link>
+              <Link href="/admin/modules" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${isLinkActive('/admin/modules') ? 'bg-gray-800 text-white shadow-sm' : ''}`}>
+                <svg className="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                <span>System Modules</span>
               </Link>
             </>
           )}
