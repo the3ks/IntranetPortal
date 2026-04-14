@@ -19,6 +19,17 @@ The Intranet Portal utilizes a **Hybrid Modular Architecture** bridging a domina
 - **Standalone Microservices (Independent "Satellites"):** Modules that are organically isolated (e.g., *Drink Ordering*, *Ticketing*) and can naturally tolerate loose database relationships (e.g., saving generic `EmployeeIds` instead of rigid SQL `FOREIGN KEY` links) must be developed as independent repositories. They orchestrate their own databases, bridge authentication via the Monolith's JSON Web Tokens, and automatically register their security permissions back to the core. *(For a complete breakdown, refer to [docs/dev_architecture-microservices.md](dev_architecture-microservices.md)).*
 
 ![Hybrid Modular Architecture Diagram](media/hybrid-architecture-modular-monolith-n-microservice.jpg)
+
+### 1.1. Core Monolith vs. Standalone Microservices
+
+When deciding where a new module should be located, consider the following trade-offs:
+
+| Aspect | Inside Core Monolith ("Central Sun") | Standalone Microservices ("Satellites") |
+| :--- | :--- | :--- |
+| **Pros** | - Simpler deployment and infrastructure overhead.<br>- Immediate data consistency using direct SQL `JOIN`s and Foreign Keys.<br>- Native access to shared application state and UI context. | - Independent scaling, deployment, and technology choices.<br>- True decoupling prevents the Monolith from bloating.<br>- Isolated databases reduce risk of cross-domain data corruption.<br>- Failure in the component does not crash the core application. |
+| **Cons** | - Bloats the core codebase, increasing build and start times.<br>- High risk of tight coupling and rigid dependencies over time.<br>- A fatal error can crash the entire central framework. | - Increased complexity in deployment, monitoring, and networking.<br>- Requires eventual consistency rather than hard SQL joins.<br>- Requires additional overhead to map authentication/permissions back to Core.  |
+| **Ideal Use Cases** | Modules requiring strict transactional integrity that heavily mutate foundational System or HR data. | Organically isolated domain tools (e.g., *Drink Ordering*, *Ticketing*) tolerant to loose data coupling. |
+
 ---
 
 ## 2. Modular Database Schema & Naming
