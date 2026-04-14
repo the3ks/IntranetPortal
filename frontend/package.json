@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "start": "next start",
+    "start": "next start -H 127.0.0.1",
     "lint": "eslint"
   },
   "dependencies": {
@@ -13,7 +13,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "gray-matter": "^4.0.3",
     "jwt-decode": "^4.0.0",
-    "next": "16.1.7",
+    "next": "16.2.3",
     "next-themes": "^0.4.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -30,5 +30,9 @@
     "eslint-config-next": "16.1.7",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "picomatch": "^4.0.4",
+    "brace-expansion": "^2.0.3"
   }
 }
