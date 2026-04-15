@@ -22,8 +22,7 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "Perm:Assets.View")]
-        public async Task<IActionResult> GetAssets()
+        public async Task<IActionResult> GetAssets([FromQuery] string? mode)
         {
             var query = _context.Assets
                 .Include(a => a.Model)
@@ -33,9 +32,28 @@ namespace IntranetPortal.Api.Controllers
                 .Include(a => a.Department)
                 .AsQueryable();
 
-            // Apply Dual-Axis RBAC scoping natively to SQL Provider
-            query = query.ApplySiteScope(_permissionService, "Perm:Assets.View");
-            query = query.ApplyDepartmentScope(_permissionService, "Perm:Assets.View");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
+
+            if (mode == "my")
+            {
+                // Strict Assigned Scope: Only show assets presently assigned to the caller
+                query = query.Where(a => a.Assignments.Any(asg => asg.AssignedToEmployeeId == empId && asg.ActualReturnDate == null));
+            }
+            else
+            {
+                // Management Ledger View
+                query = query.ApplySiteScope(_permissionService, "Perm:Assets.View");
+                query = query.ApplyDepartmentScope(_permissionService, "Perm:Assets.View");
+
+                var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
+                if (!isGlobal)
+                {
+                    var userGroupIds = await _context.ApproverGroupMembers.Where(m => m.EmployeeId == empId).Select(m => m.ApproverGroupId).ToListAsync();
+                    query = query.Where(a => a.Model != null && a.Model.Category != null && 
+                                             ((a.Model.Category.FulfillmentGroupId.HasValue && userGroupIds.Contains(a.Model.Category.FulfillmentGroupId.Value)) ||
+                                              (a.Model.Category.ParentCategory != null && a.Model.Category.ParentCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(a.Model.Category.ParentCategory.FulfillmentGroupId.Value))));
+                }
+            }
 
             var assets = await query.OrderByDescending(a => a.CreatedAt).ToListAsync();
 
@@ -57,12 +75,31 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "Perm:Assets.Manage")]
         public async Task<IActionResult> CreateAsset([FromBody] AssetCreateDto dto)
         {
             // RBAC Insert Verification
             if (!_permissionService.ValidateSiteScope("Perm:Assets.Manage", dto.SiteId)) return Forbid();
             if (!_permissionService.ValidateDepartmentScope("Perm:Assets.Manage", dto.DepartmentId)) return Forbid();
+
+            var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
+
+            if (!isGlobal)
+            {
+                var userGroupIds = await _context.ApproverGroupMembers.Where(m => m.EmployeeId == empId).Select(m => m.ApproverGroupId).ToListAsync();
+                var modelCat = await _context.AssetModels
+                    .Include(m => m.Category)
+                    .ThenInclude(c => c!.ParentCategory)
+                    .Where(m => m.Id == dto.ModelId)
+                    .Select(m => m.Category)
+                    .FirstOrDefaultAsync();
+
+                if (modelCat == null) return Forbid();
+                bool hasAccess = (modelCat.FulfillmentGroupId.HasValue && userGroupIds.Contains(modelCat.FulfillmentGroupId.Value)) ||
+                                 (modelCat.ParentCategory != null && modelCat.ParentCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(modelCat.ParentCategory.FulfillmentGroupId.Value));
+                
+                if (!hasAccess) return Forbid();
+            }
 
             var asset = new Asset
             {
@@ -77,7 +114,7 @@ namespace IntranetPortal.Api.Controllers
                 PurchasePrice = dto.PurchasePrice,
                 Vendor = dto.Vendor,
                 WarrantyExpiration = dto.WarrantyExpiration,
-                CreatedByEmployeeId = int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId) ? empId : null
+                CreatedByEmployeeId = empId != 0 ? empId : null
             };
 
             _context.Assets.Add(asset);
@@ -96,21 +133,38 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpPost("{id}/assign")]
-        [Authorize(Policy = "Perm:Assets.Manage")]
         public async Task<IActionResult> AssignAsset(int id, [FromBody] AssetAssignmentCreateDto dto)
         {
-            var asset = await _context.Assets.FindAsync(id);
+            var asset = await _context.Assets
+                .Include(a => a.Model)
+                    .ThenInclude(m => m.Category)
+                        .ThenInclude(c => c!.ParentCategory)
+                .Include(a => a.Assignments.Where(asg => asg.ActualReturnDate == null))
+                .FirstOrDefaultAsync(a => a.Id == id);
+            
             if (asset == null) return NotFound();
 
             if (!_permissionService.ValidateSiteScope("Perm:Assets.Manage", asset.SiteId)) return Forbid();
             if (!_permissionService.ValidateDepartmentScope("Perm:Assets.Manage", asset.DepartmentId)) return Forbid();
 
+            var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var adminId);
+
+            if (!isGlobal)
+            {
+                var userGroupIds = await _context.ApproverGroupMembers.Where(m => m.EmployeeId == adminId).Select(m => m.ApproverGroupId).ToListAsync();
+                if (asset.Model == null || asset.Model.Category == null) return Forbid();
+                
+                bool hasAccess = (asset.Model.Category.FulfillmentGroupId.HasValue && userGroupIds.Contains(asset.Model.Category.FulfillmentGroupId.Value)) ||
+                                 (asset.Model.Category.ParentCategory != null && asset.Model.Category.ParentCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(asset.Model.Category.ParentCategory.FulfillmentGroupId.Value));
+                
+                if (!hasAccess) return Forbid();
+            }
+
             if (asset.Status == AssetStatus.Assigned || asset.Status == AssetStatus.Deployed)
             {
                 return BadRequest("Asset is already deployed or assigned.");
             }
-
-            var adminId = int.Parse(User.FindFirst("EmployeeId")?.Value ?? "0");
 
             var assignment = new AssetAssignment
             {
@@ -140,25 +194,39 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpPost("{id}/return")]
-        [Authorize(Policy = "Perm:Assets.Manage")]
         public async Task<IActionResult> ReturnAsset(int id, [FromBody] AssetReturnDto dto)
         {
             var asset = await _context.Assets
+                .Include(a => a.Model)
+                    .ThenInclude(m => m.Category)
+                        .ThenInclude(c => c!.ParentCategory)
                 .Include(a => a.Assignments.Where(asg => asg.ActualReturnDate == null))
                 .FirstOrDefaultAsync(a => a.Id == id);
-
+            
             if (asset == null) return NotFound();
 
             if (!_permissionService.ValidateSiteScope("Perm:Assets.Manage", asset.SiteId)) return Forbid();
             if (!_permissionService.ValidateDepartmentScope("Perm:Assets.Manage", asset.DepartmentId)) return Forbid();
+
+            var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var adminId);
+
+            if (!isGlobal)
+            {
+                var userGroupIds = await _context.ApproverGroupMembers.Where(m => m.EmployeeId == adminId).Select(m => m.ApproverGroupId).ToListAsync();
+                if (asset.Model == null || asset.Model.Category == null) return Forbid();
+                
+                bool hasAccess = (asset.Model.Category.FulfillmentGroupId.HasValue && userGroupIds.Contains(asset.Model.Category.FulfillmentGroupId.Value)) ||
+                                 (asset.Model.Category.ParentCategory != null && asset.Model.Category.ParentCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(asset.Model.Category.ParentCategory.FulfillmentGroupId.Value));
+                
+                if (!hasAccess) return Forbid();
+            }
 
             var assignment = asset.Assignments.FirstOrDefault();
             if (assignment == null)
             {
                 return BadRequest("Asset is not currently assigned.");
             }
-
-            var adminId = int.Parse(User.FindFirst("EmployeeId")?.Value ?? "0");
 
             assignment.ActualReturnDate = DateTime.UtcNow;
             assignment.ReturnedByEmployeeId = adminId;

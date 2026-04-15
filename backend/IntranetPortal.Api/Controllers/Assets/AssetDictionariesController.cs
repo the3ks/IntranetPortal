@@ -19,6 +19,109 @@ namespace IntranetPortal.Api.Controllers
             _context = context;
         }
 
+        // --- APPROVER GROUPS ---
+        [HttpGet("groups")]
+        [Authorize(Policy = "Perm:Assets.Dictionaries.Manage")]
+        public async Task<IActionResult> GetGroups()
+        {
+            var groups = await _context.ApproverGroups
+                .Select(g => new
+                {
+                    g.Id,
+                    g.Name,
+                    g.IsActive
+                })
+                .OrderBy(g => g.Name)
+                .ToListAsync();
+
+            return Ok(groups);
+        }
+
+        [HttpPost("groups")]
+        [Authorize(Policy = "Perm:Assets.Dictionaries.Manage")]
+        public async Task<IActionResult> CreateGroup([FromBody] ApproverGroupDto dto)
+        {
+            var group = new ApproverGroup { Name = dto.Name, IsActive = true };
+            _context.ApproverGroups.Add(group);
+            await _context.SaveChangesAsync();
+            return Ok(group);
+        }
+
+        [HttpPost("groups/{id}/members")]
+        [Authorize(Policy = "Perm:Assets.Dictionaries.Manage")]
+        public async Task<IActionResult> AddGroupMember(int id, [FromBody] int employeeId)
+        {
+            var member = new ApproverGroupMember { ApproverGroupId = id, EmployeeId = employeeId };
+            _context.ApproverGroupMembers.Add(member);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpDelete("groups/{id}/members/{employeeId}")]
+        [Authorize(Policy = "Perm:Assets.Dictionaries.Manage")]
+        public async Task<IActionResult> RemoveGroupMember(int id, int employeeId)
+        {
+            var member = await _context.ApproverGroupMembers.FindAsync(id, employeeId);
+            if (member != null)
+            {
+                _context.ApproverGroupMembers.Remove(member);
+                await _context.SaveChangesAsync();
+            }
+            return Ok();
+        }
+
+        [HttpGet("groups/{id}/members")]
+        [Authorize(Policy = "Perm:Assets.Dictionaries.Manage")]
+        public async Task<IActionResult> GetGroupMembers(int id)
+        {
+            var members = await _context.ApproverGroupMembers
+                .Include(m => m.Employee)
+                .Where(m => m.ApproverGroupId == id)
+                .Select(m => new {
+                    Id = m.EmployeeId,
+                    FullName = m.Employee!.FullName,
+                    Email = m.Employee.Email
+                })
+                .ToListAsync();
+                
+            return Ok(members);
+        }
+
+        [HttpGet("groups/eligible-approvers")]
+        [Authorize(Policy = "Perm:Assets.Dictionaries.Manage")]
+        public async Task<IActionResult> GetEligibleApprovers([FromQuery] string? search)
+        {
+            var query = _context.UserAccounts
+                .Include(u => u.Employee)
+                .Where(u => u.IsActive && u.EmployeeId.HasValue)
+                .Where(u => u.UserRoles.Any(ur => 
+                    ur.Role.Name == "Admin" || 
+                    ur.Role.RolePermissions.Any(rp => 
+                        rp.Permission.Name == "Perm:Assets.Manage" || 
+                        rp.Permission.Name == "Perm:Assets.Approve")));
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var lowerSearch = search.ToLower();
+                query = query.Where(u => u.Employee!.FullName.ToLower().Contains(lowerSearch) || 
+                                         u.Employee.Email.ToLower().Contains(lowerSearch));
+            }
+
+            var eligible = await query
+                .Select(u => new
+                {
+                    Id = u.EmployeeId,
+                    FullName = u.Employee!.FullName,
+                    Email = u.Employee.Email
+                })
+                .Distinct()
+                .OrderBy(e => e.FullName)
+                .Take(50)
+                .ToListAsync();
+
+            return Ok(eligible);
+        }
+
         // --- CATEGORIES ---
 
         [HttpGet("categories")]
@@ -35,6 +138,9 @@ namespace IntranetPortal.Api.Controllers
                     c.Description,
                     c.ParentCategoryId,
                     c.RequiresApproval,
+                    c.AllowRequesterToSelectApprover,
+                    c.DefaultApproverGroupId,
+                    c.FulfillmentGroupId,
                     c.IsActive
                 })
                 .OrderBy(c => c.Name)
@@ -53,6 +159,9 @@ namespace IntranetPortal.Api.Controllers
                 Description = dto.Description,
                 ParentCategoryId = dto.ParentCategoryId,
                 RequiresApproval = dto.RequiresApproval,
+                AllowRequesterToSelectApprover = dto.AllowRequesterToSelectApprover,
+                DefaultApproverGroupId = dto.DefaultApproverGroupId,
+                FulfillmentGroupId = dto.FulfillmentGroupId,
                 IsActive = true
             };
 
@@ -72,6 +181,9 @@ namespace IntranetPortal.Api.Controllers
             category.Description = dto.Description;
             category.ParentCategoryId = dto.ParentCategoryId;
             category.RequiresApproval = dto.RequiresApproval;
+            category.AllowRequesterToSelectApprover = dto.AllowRequesterToSelectApprover;
+            category.DefaultApproverGroupId = dto.DefaultApproverGroupId;
+            category.FulfillmentGroupId = dto.FulfillmentGroupId;
 
             await _context.SaveChangesAsync();
             return Ok();
@@ -169,6 +281,9 @@ namespace IntranetPortal.Api.Controllers
         public string? Description { get; set; }
         public int? ParentCategoryId { get; set; }
         public bool RequiresApproval { get; set; } = true;
+        public bool AllowRequesterToSelectApprover { get; set; } = false;
+        public int? DefaultApproverGroupId { get; set; }
+        public int? FulfillmentGroupId { get; set; }
     }
 
     public class AssetModelDto
@@ -176,5 +291,10 @@ namespace IntranetPortal.Api.Controllers
         public required string Manufacturer { get; set; }
         public required string Name { get; set; }
         public int CategoryId { get; set; }
+    }
+
+    public class ApproverGroupDto
+    {
+        public required string Name { get; set; }
     }
 }

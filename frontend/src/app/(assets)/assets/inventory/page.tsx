@@ -13,7 +13,8 @@ export default function InventoryPage() {
     AssetTag: "",
     SerialNumber: "",
     ModelId: "",
-    PhysicalLocation: ""
+    PhysicalLocation: "",
+    RegistrationQuantity: 1
   });
 
   const fetchData = async () => {
@@ -30,15 +31,26 @@ export default function InventoryPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createAssetAction({
-      AssetTag: newAsset.AssetTag,
-      SerialNumber: newAsset.SerialNumber,
-      ModelId: parseInt(newAsset.ModelId),
-      PhysicalLocation: newAsset.PhysicalLocation,
-      Status: 0 // Available
-    });
+    setLoading(true);
+    const qty = newAsset.RegistrationQuantity || 1;
+    const promises = [];
+
+    for (let i = 0; i < qty; i++) {
+      let tag = newAsset.AssetTag;
+      if (qty > 1) { tag = `${newAsset.AssetTag}-${i + 1}`; }
+
+      promises.push(createAssetAction({
+        AssetTag: tag,
+        SerialNumber: qty > 1 ? "" : newAsset.SerialNumber, // Can't batch same serial
+        ModelId: parseInt(newAsset.ModelId),
+        PhysicalLocation: newAsset.PhysicalLocation,
+        Status: 0 // Available
+      }));
+    }
+
+    await Promise.all(promises);
     setShowForm(false);
-    setNewAsset({ AssetTag: "", SerialNumber: "", ModelId: "", PhysicalLocation: "" });
+    setNewAsset({ AssetTag: "", SerialNumber: "", ModelId: "", PhysicalLocation: "", RegistrationQuantity: 1 });
     fetchData();
   };
 
@@ -49,10 +61,10 @@ export default function InventoryPage() {
           <div className="p-2 bg-indigo-50 text-indigo-500 rounded-lg">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
           </div>
-          Hardware Capital Ledger
+          Global Asset Ledger
         </h2>
         <button onClick={() => setShowForm(!showForm)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-bold shadow-md shadow-indigo-200 transition-all">
-          Register New Asset
+          Register Bounded Unit
         </button>
       </div>
 
@@ -60,23 +72,27 @@ export default function InventoryPage() {
         <div className="bg-indigo-50/30 p-6 rounded-2xl border border-indigo-100/50">
           <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="text-xs font-bold text-foreground/60 uppercase">Asset Tag *</label>
-              <input required className="w-full mt-1 border border-border/50 rounded-lg p-2.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" value={newAsset.AssetTag} onChange={e => setNewAsset({...newAsset, AssetTag: e.target.value})} placeholder="e.g. IT-LPT-001" />
+              <label className="text-xs font-bold text-foreground/60 uppercase">Tracking ID (Asset Tag) *</label>
+              <input required className="w-full mt-1 border border-border/50 rounded-lg p-2.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" value={newAsset.AssetTag} onChange={e => setNewAsset({ ...newAsset, AssetTag: e.target.value })} placeholder="e.g. IT-LPT-001 or SW-LIC-55" />
             </div>
             <div>
-              <label className="text-xs font-bold text-foreground/60 uppercase">Hardware Model *</label>
-              <select required className="w-full mt-1 border border-border/50 rounded-lg p-2.5 outline-none focus:border-indigo-400 bg-card focus:ring-2 focus:ring-indigo-100" value={newAsset.ModelId} onChange={e => setNewAsset({...newAsset, ModelId: e.target.value})}>
+              <label className="text-xs font-bold text-foreground/60 uppercase">Bounded Model *</label>
+              <select required className="w-full mt-1 border border-border/50 rounded-lg p-2.5 outline-none focus:border-indigo-400 bg-card focus:ring-2 focus:ring-indigo-100" value={newAsset.ModelId} onChange={e => setNewAsset({ ...newAsset, ModelId: e.target.value })}>
                 <option value="">Select Bounded Model...</option>
                 {models.map(m => <option key={m.id} value={m.id}>{m.manufacturer} {m.name} ({m.categoryName})</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs font-bold text-foreground/60 uppercase">Serial Number (Optional)</label>
-              <input className="w-full mt-1 border border-border/50 rounded-lg p-2.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" value={newAsset.SerialNumber} onChange={e => setNewAsset({...newAsset, SerialNumber: e.target.value})} placeholder="Serial or Service Tag" />
+              <label className="text-xs font-bold text-foreground/60 uppercase">Serial / License Key (Optional)</label>
+              <input disabled={newAsset.RegistrationQuantity > 1} className={`w-full mt-1 border border-border/50 rounded-lg p-2.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 ${newAsset.RegistrationQuantity > 1 ? 'opacity-50 cursor-not-allowed bg-card' : ''}`} value={newAsset.SerialNumber} onChange={e => setNewAsset({ ...newAsset, SerialNumber: e.target.value })} placeholder={newAsset.RegistrationQuantity > 1 ? "N/A for batches" : "Service Tag, Product Key, VIN, etc..."} />
             </div>
             <div>
-              <label className="text-xs font-bold text-foreground/60 uppercase">Physical Location</label>
-              <input className="w-full mt-1 border border-border/50 rounded-lg p-2.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" value={newAsset.PhysicalLocation} onChange={e => setNewAsset({...newAsset, PhysicalLocation: e.target.value})} placeholder="e.g. Server Room B" />
+              <label className="text-xs font-bold text-foreground/60 uppercase">Location / Context Scope</label>
+              <input className="w-full mt-1 border border-border/50 rounded-lg p-2.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" value={newAsset.PhysicalLocation} onChange={e => setNewAsset({ ...newAsset, PhysicalLocation: e.target.value })} placeholder="e.g. HQ Vault, Cloud Tenant, User Email" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-foreground/60 uppercase text-amber-600">Batch Quantity *</label>
+              <input type="number" min="1" max="100" required className="w-full mt-1 border border-amber-500/50 rounded-lg p-2.5 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 bg-amber-50/10 text-amber-800 font-bold" value={newAsset.RegistrationQuantity} onChange={e => setNewAsset({ ...newAsset, RegistrationQuantity: parseInt(e.target.value) || 1 })} />
             </div>
 
             <div className="md:col-span-2 lg:col-span-4 flex justify-end gap-3 mt-2">
@@ -113,9 +129,9 @@ export default function InventoryPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border
-                        ${a.status === 'Available' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-                          a.status === 'Assigned' || a.status === 'Deployed' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
-                          'bg-background/50 text-foreground/90 border-border/50'}`}>
+                        ${a.status === 'Available' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          a.status === 'Assigned' || a.status === 'Deployed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            'bg-background/50 text-foreground/90 border-border/50'}`}>
                         {a.status}
                       </span>
                     </td>

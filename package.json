@@ -9,7 +9,8 @@
   "scripts": {
     "dev:backend": "cd backend/IntranetPortal.Api && dotnet run",
     "dev:frontend": "cd frontend && npm run dev",
-    "dev": "concurrently -c \"cyan.bold,blue.bold\" -n \"ASP.NET,NEXT.JS\" \"npm run dev:backend\" \"npm run dev:frontend\""
+    "dev": "concurrently -c \"cyan.bold,blue.bold\" -n \"ASP.NET,NEXT.JS\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "stop": "taskkill /F /IM node.exe & taskkill /F /IM dotnet.exe"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

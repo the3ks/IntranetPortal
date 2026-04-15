@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { approveRequestAction, getAssetRequestsAction } from "@/app/actions/assets";
 
 interface AssetRequestsViewProps {
@@ -59,7 +60,7 @@ export default function AssetRequestsView({ type }: AssetRequestsViewProps) {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       <div className="flex justify-between items-center bg-background/50 p-6 rounded-2xl border border-border/50">
         <div>
           <h2 className="text-xl font-bold text-foreground">
@@ -70,9 +71,9 @@ export default function AssetRequestsView({ type }: AssetRequestsViewProps) {
           </p>
         </div>
         {type === "mine" && (
-          <button className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors shadow-sm">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> New Request
-          </button>
+          <Link href="/assets/catalog" className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors shadow-sm">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> Browse Catalog
+          </Link>
         )}
       </div>
 
@@ -111,11 +112,11 @@ export default function AssetRequestsView({ type }: AssetRequestsViewProps) {
                     {new Date(r.createdAt).toLocaleDateString()}
                   </td>
                   {type === "approvals" && (
-                     <td className="px-6 py-5 whitespace-nowrap text-right text-sm">
-                       <button onClick={() => handleApprove(r.id)} className="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl font-semibold transition-colors">
-                         Approve
-                       </button>
-                     </td>
+                    <td className="px-6 py-5 whitespace-nowrap text-right text-sm">
+                      <button onClick={() => handleApprove(r.id)} className="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl font-semibold transition-colors">
+                        Approve
+                      </button>
+                    </td>
                   )}
                 </tr>
               ))

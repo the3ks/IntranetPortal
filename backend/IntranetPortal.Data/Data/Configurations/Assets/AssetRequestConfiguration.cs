@@ -22,35 +22,10 @@ namespace IntranetPortal.Data.Data.Configurations.Assets
                 .HasForeignKey(r => r.RequestedForEmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasOne(r => r.RequestedCategory)
-                .WithMany()
-                .HasForeignKey(r => r.RequestedCategoryId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasOne(r => r.RequestedModel)
-                .WithMany()
-                .HasForeignKey(r => r.RequestedModelId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasOne(r => r.RequestedAccessory)
-                .WithMany()
-                .HasForeignKey(r => r.RequestedAccessoryId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasOne(r => r.ManagerApprovedByEmployee)
-                .WithMany()
-                .HasForeignKey(r => r.ManagerApprovedByEmployeeId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasOne(r => r.FulfilledByEmployee)
-                .WithMany()
-                .HasForeignKey(r => r.FulfilledByEmployeeId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasOne(r => r.AssignedAsset)
-                .WithMany()
-                .HasForeignKey(r => r.AssignedAssetId)
-                .OnDelete(DeleteBehavior.Restrict);
+            builder.HasMany(r => r.LineItems)
+                .WithOne(li => li.AssetRequest)
+                .HasForeignKey(li => li.AssetRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

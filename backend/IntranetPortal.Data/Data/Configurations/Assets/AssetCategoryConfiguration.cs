@@ -17,6 +17,16 @@ namespace IntranetPortal.Data.Data.Configurations.Assets
                 .WithMany(c => c.SubCategories)
                 .HasForeignKey(c => c.ParentCategoryId)
                 .OnDelete(DeleteBehavior.Restrict); 
+
+            builder.HasOne(ac => ac.DefaultApproverGroup)
+                   .WithMany()
+                   .HasForeignKey(ac => ac.DefaultApproverGroupId)
+                   .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(ac => ac.FulfillmentGroup)
+                   .WithMany()
+                   .HasForeignKey(ac => ac.FulfillmentGroupId)
+                   .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

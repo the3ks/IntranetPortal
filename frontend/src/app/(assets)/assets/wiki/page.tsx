@@ -9,7 +9,7 @@ export default function AssetsWikiPage() {
             Assets Management Wiki
           </h1>
           <p className="text-foreground/60 text-lg max-w-3xl">
-            Welcome to the definitive guide for navigating the Intranet's physical inventory system. 
+            Welcome to the definitive guide for navigating the Intranet's physical inventory system.
             This module organizes company hardware, software bindings, and organizational custody in real time.
           </p>
         </div>
@@ -23,7 +23,7 @@ export default function AssetsWikiPage() {
           </h2>
         </div>
         <div className="p-8 prose dark:prose-invert max-w-none prose-emerald prose-p:text-foreground/80 text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground">
-          
+
           <h3 className="text-xl font-bold mt-0 mb-4 border-b border-border/50 pb-2">1. For General Employees</h3>
           <p className="mb-6">
             As an employee, your primary interaction with this module will be tracking what you own and requesting what you need:
@@ -31,14 +31,18 @@ export default function AssetsWikiPage() {
           <ul className="list-disc pl-5 mb-8 space-y-3">
             <li><strong>My Assets:</strong> This panel shows every serialized device or bulk accessory currently bound to your employment ledger. If you lose a device, contact IT immediately.</li>
             <li><strong>Requisition Center:</strong> Need a new keyboard or a specialized laptop? Check the internal dictionary for available bounded models and submit a formal request.</li>
-            <li><strong>Auto-Approval vs Manager Approval:</strong> Low-friction items (like bulk mice or cables) might not require your manager's explicit signature and will flow directly to Fulfillment. Expensive serialized hardware (like MacBooks) strictly mandates approval routing.</li>
+            <li><strong>Routing & Approvals:</strong> Requests are intelligently routed based on the item category. While your direct manager may approve the budget, specialized items require additional sign-off from the respective department.</li>
           </ul>
 
-          <h3 className="text-xl font-bold mt-10 mb-4 border-b border-border/50 pb-2">2. For Line Managers</h3>
+          <h3 className="text-xl font-bold mt-10 mb-4 border-b border-border/50 pb-2">2. Role-Based & Category Routing</h3>
           <p className="mb-6">
-            If you manage personnel, you will occasionally receive pings in your <strong>Pending Approvals</strong> queue when your direct reports issue requisitions that require budgetary sign-off.
-            You must manually hit "Approve" or "Reject". Once approved, the IT or Facilities team will handle physical custody transfer.
+            The platform utilizes <strong>Category-Based Management Routing</strong> to ensure the proper personnel oversee specific asset flows:
           </p>
+          <ul className="list-disc pl-5 mb-8 space-y-3">
+            <li><strong>Line Managers:</strong> If you manage personnel, you provide budgetary sign-off for your direct reports' requisitions from the <strong>Pending Approvals</strong> queue.</li>
+            <li><strong>IT Hardware:</strong> High-value, serialized IT equipment (e.g., laptops, servers) is exclusively routed to the <strong>IT Manager</strong> for final authorization and provisioning.</li>
+            <li><strong>Accessories & Peripherals:</strong> Day-to-day items (e.g., mice, keyboards, adapters) are handled via a shared routing queue, jointly overseen and approved by the <strong>IT Manager</strong> and designated support staff.</li>
+          </ul>
 
           <h3 className="text-xl font-bold mt-10 mb-4 border-b border-border/50 pb-2">3. For Administrators & Fulfillment Agents</h3>
           <p className="mb-6 border-l-4 border-emerald-500 pl-4 py-1 italic bg-emerald-50/50 rounded-r-lg">
@@ -47,9 +51,9 @@ export default function AssetsWikiPage() {
           <ul className="list-disc pl-5 mb-4 space-y-3">
             <li><strong>Fulfillment Queue:</strong> Acts as the staging area where approved requests land. When a physical asset is handed to the employee, the agent "Fulfills" the request here, binding the asset to their profile.</li>
             <li><strong>System Dictionaries:</strong> A strict topology defining what exists in the system. <em>Categories</em> (e.g. Computers) hold <em>Bounded Models</em> (e.g. Dell XPS). You cannot inject raw unknown models into the system; they must be strictly indexed here first.</li>
-            <li><strong>Hardware Inventory vs Accessories:</strong> 
-              <br />- <strong>Hardware</strong> implies serialized, high-value entities. Each entity is uniquely tracked using its Serial Tag across its lifecycle (Available → Deployed → InMaintenance).
-              <br />- <strong>Accessories</strong> are bulk entities. We simply track the stockpile integer (e.g. 50 extra keyboards). Fulfilling an accessory request simply decrements the stock count without creating a uniquely identifying database row.
+            <li><strong>Bounded Asset Inventory vs Non-Bounded (Accessories):</strong>
+              Assets managed here represent strictly bounded items (e.g., Laptops tightly serialized or Software uniquely provisioned).
+              Conversely, bulk items like keyboards, mice, or stationaries are managed simply via quantity trackers in the Accessories sections.
             </li>
           </ul>
 

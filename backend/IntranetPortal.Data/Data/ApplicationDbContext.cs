@@ -33,6 +33,11 @@ namespace IntranetPortal.Data.Data
         public DbSet<IntranetPortal.Data.Models.Assets.Accessory> Accessories { get; set; }
         public DbSet<IntranetPortal.Data.Models.Assets.AccessoryCheckout> AccessoryCheckouts { get; set; }
         public DbSet<IntranetPortal.Data.Models.Assets.AssetRequest> AssetRequests { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.AssetRequestLineItem> AssetRequestLineItems { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.ApproverGroup> ApproverGroups { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.ApproverGroupMember> ApproverGroupMembers { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.ApproverGroupScope> ApproverGroupScopes { get; set; }
+        public DbSet<IntranetPortal.Data.Models.Assets.AssetCategoryApproverGroup> AssetCategoryApproverGroups { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

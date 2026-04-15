@@ -26,58 +26,141 @@ namespace IntranetPortal.Api.Controllers
         {
             int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
 
-            var requests = await _context.AssetRequests
-                .Include(r => r.RequestedCategory)
-                .Include(r => r.RequestedModel)
-                .Include(r => r.RequestedAccessory)
-                .Include(r => r.RequestedForEmployee)
-                .Where(r => r.RequestedByEmployeeId == empId || r.RequestedForEmployeeId == empId)
-                .OrderByDescending(r => r.CreatedAt)
+            var lineItems = await _context.AssetRequestLineItems
+                .Include(li => li.AssetRequest)
+                .Include(li => li.AssetRequest!.RequestedForEmployee)
+                .Include(li => li.RequestedCategory)
+                .Include(li => li.RequestedModel)
+                .Include(li => li.RequestedAccessory)
+                .Where(li => li.AssetRequest!.RequestedByEmployeeId == empId || li.AssetRequest.RequestedForEmployeeId == empId)
+                .OrderByDescending(li => li.AssetRequest!.CreatedAt)
                 .ToListAsync();
 
-            return Ok(requests.Select(MapToDto));
+            return Ok(lineItems.Select(MapToDto));
+        }
+
+        [HttpGet("approvers")]
+        public async Task<IActionResult> GetApprovers([FromQuery] int categoryId, [FromQuery] int departmentId)
+        {
+            var category = await _context.AssetCategories
+                .Include(c => c.ApproverGroups)
+                .FirstOrDefaultAsync(c => c.Id == categoryId);
+
+            if (category == null || !category.AllowRequesterToSelectApprover)
+                return Ok(new List<object>());
+
+            var groupIds = category.ApproverGroups.Select(ag => ag.ApproverGroupId).ToList();
+
+            var validGroups = await _context.ApproverGroupScopes
+                .Where(s => s.DepartmentId == departmentId && groupIds.Contains(s.ApproverGroupId))
+                .Select(s => s.ApproverGroupId)
+                .ToListAsync();
+
+            if (!validGroups.Any())
+            {
+                var scopedGroups = await _context.ApproverGroupScopes.Select(s => s.ApproverGroupId).Distinct().ToListAsync();
+                validGroups = groupIds.Except(scopedGroups).ToList();
+            }
+
+            var approvers = await _context.ApproverGroupMembers
+                .Include(m => m.Employee)
+                .Where(m => validGroups.Contains(m.ApproverGroupId))
+                .Select(m => new {
+                    m.EmployeeId,
+                    m.Employee!.FullName,
+                    m.Employee.Email
+                })
+                .Distinct()
+                .ToListAsync();
+
+            return Ok(approvers);
         }
 
         [HttpGet("pending-approvals")]
-        [Authorize(Policy = "Perm:Assets.Approve")]
         public async Task<IActionResult> GetPendingApprovals()
         {
-            // A manager can only see requests for employees inside departments they manage
-            var allowedDepts = _permissionService.GetAllowedDepartments("Perm:Assets.Approve");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
             var isGlobal = _permissionService.IsGlobal("Perm:Assets.Approve");
 
-            var query = _context.AssetRequests
-                .Include(r => r.RequestedCategory)
-                .Include(r => r.RequestedModel)
-                .Include(r => r.RequestedAccessory)
-                .Include(r => r.RequestedForEmployee)
-                .Where(r => r.Status == RequestStatus.PendingApproval);
+            var userGroupIds = await _context.ApproverGroupMembers
+                .Where(m => m.EmployeeId == empId)
+                .Select(m => m.ApproverGroupId)
+                .ToListAsync();
+
+            var query = _context.AssetRequestLineItems
+                .Include(li => li.AssetRequest)
+                .Include(li => li.AssetRequest!.RequestedForEmployee)
+                .Include(li => li.RequestedCategory)
+                .Include(li => li.RequestedModel)
+                .Include(li => li.RequestedAccessory)
+                .Where(li => li.Status == RequestStatus.PendingApproval);
 
             if (!isGlobal)
             {
-                query = query.Where(r => r.RequestedForEmployee != null && 
-                                         allowedDepts.Contains(r.RequestedForEmployee.DepartmentId));
+                query = query.Where(li => li.SelectedApproverEmployeeId == empId || 
+                                        (li.AssignedApproverGroupId.HasValue && userGroupIds.Contains(li.AssignedApproverGroupId.Value)));
             }
 
-            var requests = await query.OrderBy(r => r.CreatedAt).ToListAsync();
-            return Ok(requests.Select(MapToDto));
+            var lineItems = await query.OrderBy(li => li.AssetRequest!.CreatedAt).ToListAsync();
+            return Ok(lineItems.Select(MapToDto));
+        }
+
+        [HttpGet("is-manager")]
+        public async Task<IActionResult> IsManager()
+        {
+            var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
+            if (isGlobal) return Ok(true);
+
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
+            var userGroupIds = await _context.ApproverGroupMembers.Where(m => m.EmployeeId == empId).Select(m => m.ApproverGroupId).ToListAsync();
+            
+            var hasMappedCategory = await _context.AssetCategories
+                .AnyAsync(c => (c.FulfillmentGroupId.HasValue && userGroupIds.Contains(c.FulfillmentGroupId.Value)) ||
+                               (c.ParentCategory != null && c.ParentCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(c.ParentCategory.FulfillmentGroupId.Value)));
+            
+            return Ok(hasMappedCategory);
+        }
+
+        [HttpGet("is-approver")]
+        public async Task<IActionResult> IsApprover()
+        {
+            var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
+            if (isGlobal) return Ok(true);
+
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
+            var isApprover = await _context.ApproverGroupMembers.AnyAsync(m => m.EmployeeId == empId);
+            
+            return Ok(isApprover);
         }
 
         [HttpGet("fulfillment-queue")]
-        [Authorize(Policy = "Perm:Assets.Manage")]
         public async Task<IActionResult> GetFulfillmentQueue()
         {
-            // IT/Facilities only see items pending fulfillment
-            var requests = await _context.AssetRequests
-                .Include(r => r.RequestedCategory)
-                .Include(r => r.RequestedModel)
-                .Include(r => r.RequestedAccessory)
-                .Include(r => r.RequestedForEmployee)
-                .Where(r => r.Status == RequestStatus.PendingFulfillment || r.Status == RequestStatus.InProcurement)
-                .OrderBy(r => r.CreatedAt)
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
+            var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
+
+            var userGroupIds = await _context.ApproverGroupMembers
+                .Where(m => m.EmployeeId == empId)
+                .Select(m => m.ApproverGroupId)
                 .ToListAsync();
 
-            return Ok(requests.Select(MapToDto));
+            var query = _context.AssetRequestLineItems
+                .Include(li => li.AssetRequest)
+                .Include(li => li.AssetRequest!.RequestedForEmployee)
+                .Include(li => li.RequestedCategory)
+                .Include(li => li.RequestedModel)
+                .Include(li => li.RequestedAccessory)
+                .Where(li => li.Status == RequestStatus.PendingFulfillment || li.Status == RequestStatus.InProcurement);
+
+            if (!isGlobal)
+            {
+                query = query.Where(li => li.RequestedCategory != null && 
+                                          ((li.RequestedCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(li.RequestedCategory.FulfillmentGroupId.Value)) ||
+                                           (li.RequestedCategory.ParentCategory != null && li.RequestedCategory.ParentCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(li.RequestedCategory.ParentCategory.FulfillmentGroupId.Value))));
+            }
+
+            var lineItems = await query.OrderBy(li => li.AssetRequest!.CreatedAt).ToListAsync();
+            return Ok(lineItems.Select(MapToDto));
         }
 
         [HttpPost]
@@ -89,24 +172,61 @@ namespace IntranetPortal.Api.Controllers
             {
                 RequestedByEmployeeId = empId,
                 RequestedForEmployeeId = dto.RequestedForEmployeeId ?? empId,
-                Type = dto.Type,
-                RequestedCategoryId = dto.RequestedCategoryId,
-                RequestedModelId = dto.RequestedModelId,
-                RequestedAccessoryId = dto.RequestedAccessoryId,
-                Quantity = dto.Quantity,
-                Justification = dto.Justification,
                 Status = RequestStatus.PendingApproval,
                 CreatedAt = DateTime.UtcNow
             };
 
-            // Auto-Approval Logic for Consumables
-            if (dto.RequestedCategoryId.HasValue)
+            foreach (var item in dto.Items)
             {
-                var cat = await _context.AssetCategories.FindAsync(dto.RequestedCategoryId.Value);
-                if (cat != null && !cat.RequiresApproval)
+                var lineItem = new AssetRequestLineItem
                 {
-                    request.Status = RequestStatus.PendingFulfillment;
+                    Type = item.Type,
+                    RequestedCategoryId = item.RequestedCategoryId,
+                    RequestedModelId = item.RequestedModelId,
+                    RequestedAccessoryId = item.RequestedAccessoryId,
+                    Quantity = item.Quantity,
+                    Justification = item.Justification,
+                    Status = RequestStatus.PendingApproval
+                };
+
+                if (item.RequestedCategoryId.HasValue)
+                {
+                    var cat = await _context.AssetCategories
+                        .Include(c => c.ApproverGroups)
+                        .FirstOrDefaultAsync(c => c.Id == item.RequestedCategoryId.Value);
+                    if (cat != null)
+                    {
+                        if (!cat.RequiresApproval)
+                        {
+                            lineItem.Status = RequestStatus.PendingFulfillment;
+                        }
+                        else
+                        {
+                            if (cat.AllowRequesterToSelectApprover && item.SelectedApproverEmployeeId.HasValue)
+                            {
+                                lineItem.SelectedApproverEmployeeId = item.SelectedApproverEmployeeId;
+                            }
+                            else
+                            {
+                                var requester = await _context.Employees.FindAsync(request.RequestedForEmployeeId);
+                                if (requester != null)
+                                {
+                                    var scopedGroup = await _context.ApproverGroupScopes
+                                        .Where(s => s.DepartmentId == requester.DepartmentId && 
+                                                    cat.ApproverGroups.Select(ag => ag.ApproverGroupId).Contains(s.ApproverGroupId))
+                                        .Select(s => s.ApproverGroupId)
+                                        .FirstOrDefaultAsync();
+
+                                    if (scopedGroup > 0)
+                                        lineItem.AssignedApproverGroupId = scopedGroup;
+                                    else
+                                        lineItem.AssignedApproverGroupId = cat.DefaultApproverGroupId;
+                                }
+                            }
+                        }
+                    }
                 }
+                request.LineItems.Add(lineItem);
             }
 
             _context.AssetRequests.Add(request);
@@ -114,41 +234,54 @@ namespace IntranetPortal.Api.Controllers
             return Ok(new { request.Id });
         }
 
-        [HttpPost("{id}/approve")]
-        [Authorize(Policy = "Perm:Assets.Approve")]
-        public async Task<IActionResult> ApproveRequest(int id)
+        [HttpPost("line-items/{id}/approve")]
+        public async Task<IActionResult> ApproveLineItem(int id)
         {
-            var request = await _context.AssetRequests.FindAsync(id);
-            if (request == null) return NotFound();
+            var lineItem = await _context.AssetRequestLineItems.FindAsync(id);
+            if (lineItem == null) return NotFound();
 
             int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
 
-            request.Status = RequestStatus.PendingFulfillment;
-            request.ManagerApprovedByEmployeeId = empId;
-            request.ManagerApprovedAt = DateTime.UtcNow;
+            lineItem.Status = RequestStatus.PendingFulfillment;
+            lineItem.ApprovedByEmployeeId = empId;
+            lineItem.ApprovedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return Ok();
         }
 
-        [HttpPost("{id}/fulfill")]
-        [Authorize(Policy = "Perm:Assets.Manage")]
-        public async Task<IActionResult> FulfillRequest(int id, [FromBody] AssetRequestFulfillDto dto)
+        [HttpPost("line-items/{id}/fulfill")]
+        public async Task<IActionResult> FulfillLineItem(int id, [FromBody] AssetRequestFulfillDto dto)
         {
-            var request = await _context.AssetRequests.FindAsync(id);
-            if (request == null) return NotFound();
+            var lineItem = await _context.AssetRequestLineItems
+                .Include(li => li.AssetRequest)
+                .Include(li => li.RequestedCategory).ThenInclude(c => c.ParentCategory)
+                .FirstOrDefaultAsync(li => li.Id == id);
+            
+            if (lineItem == null) return NotFound();
 
             int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
+            var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
 
-            request.Status = RequestStatus.Fulfilled;
-            request.FulfilledByEmployeeId = empId;
-            request.FulfilledAt = DateTime.UtcNow;
+            if (!isGlobal)
+            {
+                var userGroupIds = await _context.ApproverGroupMembers.Where(m => m.EmployeeId == empId).Select(m => m.ApproverGroupId).ToListAsync();
+                if (lineItem.RequestedCategory == null) return Forbid();
+                
+                bool hasAccess = (lineItem.RequestedCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(lineItem.RequestedCategory.FulfillmentGroupId.Value)) ||
+                                 (lineItem.RequestedCategory.ParentCategory != null && lineItem.RequestedCategory.ParentCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(lineItem.RequestedCategory.ParentCategory.FulfillmentGroupId.Value));
+                
+                if (!hasAccess) return Forbid();
+            }
+
+            lineItem.Status = RequestStatus.Fulfilled;
+            lineItem.FulfilledByEmployeeId = empId;
+            lineItem.FulfilledAt = DateTime.UtcNow;
 
             if (dto.AssignedAssetId.HasValue)
             {
-                request.AssignedAssetId = dto.AssignedAssetId;
+                lineItem.AssignedAssetId = dto.AssignedAssetId;
                 
-                // Automatically assign it in the hard ledger too
                 var asset = await _context.Assets.FindAsync(dto.AssignedAssetId.Value);
                 if (asset != null)
                 {
@@ -156,25 +289,25 @@ namespace IntranetPortal.Api.Controllers
                     _context.AssetAssignments.Add(new AssetAssignment
                     {
                         AssetId = asset.Id,
-                        AssignedToEmployeeId = request.RequestedForEmployeeId,
+                        AssignedToEmployeeId = lineItem.AssetRequest!.RequestedForEmployeeId,
                         DateAssigned = DateTime.UtcNow,
                         AssignedByEmployeeId = empId
                     });
                 }
             }
 
-            if (request.Type == RequestType.BulkAccessory && request.RequestedAccessoryId.HasValue)
+            if (lineItem.Type == RequestType.BulkAccessory && lineItem.RequestedAccessoryId.HasValue)
             {
-                var accessory = await _context.Accessories.FindAsync(request.RequestedAccessoryId.Value);
-                if (accessory != null && accessory.AvailableQuantity >= request.Quantity)
+                var accessory = await _context.Accessories.FindAsync(lineItem.RequestedAccessoryId.Value);
+                if (accessory != null && accessory.AvailableQuantity >= lineItem.Quantity)
                 {
-                    accessory.AvailableQuantity -= request.Quantity;
+                    accessory.AvailableQuantity -= lineItem.Quantity;
                     _context.AccessoryCheckouts.Add(new AccessoryCheckout
                     {
                         AccessoryId = accessory.Id,
-                        RequestedByEmployeeId = request.RequestedForEmployeeId,
+                        RequestedByEmployeeId = lineItem.AssetRequest!.RequestedForEmployeeId,
                         FulfilledByEmployeeId = empId,
-                        Quantity = request.Quantity
+                        Quantity = lineItem.Quantity
                     });
                 }
             }
@@ -183,20 +316,20 @@ namespace IntranetPortal.Api.Controllers
             return Ok();
         }
 
-        private static AssetRequestDto MapToDto(AssetRequest r)
+        private static AssetRequestDto MapToDto(AssetRequestLineItem li)
         {
             return new AssetRequestDto
             {
-                Id = r.Id,
-                RequestedForName = r.RequestedForEmployee?.FullName,
-                Type = r.Type.ToString(),
-                CategoryName = r.RequestedCategory?.Name,
-                ModelName = r.RequestedModel?.Name,
-                AccessoryName = r.RequestedAccessory?.Name,
-                Quantity = r.Quantity,
-                Justification = r.Justification,
-                Status = r.Status.ToString(),
-                CreatedAt = r.CreatedAt
+                Id = li.Id,
+                RequestedForName = li.AssetRequest?.RequestedForEmployee?.FullName,
+                Type = li.Type.ToString(),
+                CategoryName = li.RequestedCategory?.Name,
+                ModelName = li.RequestedModel?.Name,
+                AccessoryName = li.RequestedAccessory?.Name,
+                Quantity = li.Quantity,
+                Justification = li.Justification,
+                Status = li.Status.ToString(),
+                CreatedAt = li.AssetRequest?.CreatedAt ?? DateTime.UtcNow
             };
         }
     }
@@ -218,12 +351,18 @@ namespace IntranetPortal.Api.Controllers
     public class AssetRequestCreateDto
     {
         public int? RequestedForEmployeeId { get; set; }
+        public List<AssetRequestLineItemCreateDto> Items { get; set; } = new();
+    }
+
+    public class AssetRequestLineItemCreateDto
+    {
         public RequestType Type { get; set; }
         public int? RequestedCategoryId { get; set; }
         public int? RequestedModelId { get; set; }
         public int? RequestedAccessoryId { get; set; }
         public int Quantity { get; set; } = 1;
         public required string Justification { get; set; }
+        public int? SelectedApproverEmployeeId { get; set; }
     }
 
     public class AssetRequestFulfillDto

@@ -4,6 +4,7 @@ using IntranetPortal.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntranetPortal.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260415054001_AddCategoryApprovers")]
+    partial class AddCategoryApprovers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -153,7 +156,7 @@ namespace IntranetPortal.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AM_ApproverGroups", (string)null);
+                    b.ToTable("ApproverGroups");
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Assets.ApproverGroupMember", b =>
@@ -168,7 +171,7 @@ namespace IntranetPortal.Data.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("AM_ApproverGroupMembers", (string)null);
+                    b.ToTable("ApproverGroupMembers");
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Assets.ApproverGroupScope", b =>
@@ -183,7 +186,7 @@ namespace IntranetPortal.Data.Migrations
 
                     b.HasIndex("DepartmentId");
 
-                    b.ToTable("AM_ApproverGroupScopes", (string)null);
+                    b.ToTable("ApproverGroupScopes");
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Assets.Asset", b =>
@@ -364,9 +367,6 @@ namespace IntranetPortal.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
 
-                    b.Property<int?>("FulfillmentGroupId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
@@ -385,8 +385,6 @@ namespace IntranetPortal.Data.Migrations
 
                     b.HasIndex("DefaultApproverGroupId");
 
-                    b.HasIndex("FulfillmentGroupId");
-
                     b.HasIndex("ParentCategoryId");
 
                     b.ToTable("AM_AssetCategories", (string)null);
@@ -404,7 +402,7 @@ namespace IntranetPortal.Data.Migrations
 
                     b.HasIndex("ApproverGroupId");
 
-                    b.ToTable("AM_AssetCategoryApproverGroups", (string)null);
+                    b.ToTable("AssetCategoryApproverGroups");
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Assets.AssetMaintenance", b =>
@@ -484,42 +482,10 @@ namespace IntranetPortal.Data.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("RequestedByEmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RequestedForEmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RequestedByEmployeeId");
-
-                    b.HasIndex("RequestedForEmployeeId");
-
-                    b.ToTable("AM_AssetRequests", (string)null);
-                });
-
-            modelBuilder.Entity("IntranetPortal.Data.Models.Assets.AssetRequestLineItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int?>("ApprovedByEmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("AssetRequestId")
                         .HasColumnType("int");
 
                     b.Property<int?>("AssignedApproverGroupId")
@@ -527,6 +493,9 @@ namespace IntranetPortal.Data.Migrations
 
                     b.Property<int?>("AssignedAssetId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("FulfilledAt")
                         .HasColumnType("datetime(6)");
@@ -545,7 +514,13 @@ namespace IntranetPortal.Data.Migrations
                     b.Property<int?>("RequestedAccessoryId")
                         .HasColumnType("int");
 
+                    b.Property<int>("RequestedByEmployeeId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("RequestedCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RequestedForEmployeeId")
                         .HasColumnType("int");
 
                     b.Property<int?>("RequestedModelId")
@@ -564,8 +539,6 @@ namespace IntranetPortal.Data.Migrations
 
                     b.HasIndex("ApprovedByEmployeeId");
 
-                    b.HasIndex("AssetRequestId");
-
                     b.HasIndex("AssignedApproverGroupId");
 
                     b.HasIndex("AssignedAssetId");
@@ -574,13 +547,17 @@ namespace IntranetPortal.Data.Migrations
 
                     b.HasIndex("RequestedAccessoryId");
 
+                    b.HasIndex("RequestedByEmployeeId");
+
                     b.HasIndex("RequestedCategoryId");
+
+                    b.HasIndex("RequestedForEmployeeId");
 
                     b.HasIndex("RequestedModelId");
 
                     b.HasIndex("SelectedApproverEmployeeId");
 
-                    b.ToTable("AM_AssetRequestLineItems", (string)null);
+                    b.ToTable("AM_AssetRequests", (string)null);
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Department", b =>
@@ -1138,19 +1115,12 @@ namespace IntranetPortal.Data.Migrations
                         .HasForeignKey("DefaultApproverGroupId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("IntranetPortal.Data.Models.Assets.ApproverGroup", "FulfillmentGroup")
-                        .WithMany()
-                        .HasForeignKey("FulfillmentGroupId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("IntranetPortal.Data.Models.Assets.AssetCategory", "ParentCategory")
                         .WithMany("SubCategories")
                         .HasForeignKey("ParentCategoryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("DefaultApproverGroup");
-
-                    b.Navigation("FulfillmentGroup");
 
                     b.Navigation("ParentCategory");
                 });
@@ -1206,35 +1176,10 @@ namespace IntranetPortal.Data.Migrations
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Assets.AssetRequest", b =>
                 {
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "RequestedByEmployee")
-                        .WithMany()
-                        .HasForeignKey("RequestedByEmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "RequestedForEmployee")
-                        .WithMany()
-                        .HasForeignKey("RequestedForEmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("RequestedByEmployee");
-
-                    b.Navigation("RequestedForEmployee");
-                });
-
-            modelBuilder.Entity("IntranetPortal.Data.Models.Assets.AssetRequestLineItem", b =>
-                {
                     b.HasOne("IntranetPortal.Data.Models.Employee", "ApprovedByEmployee")
                         .WithMany()
                         .HasForeignKey("ApprovedByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("IntranetPortal.Data.Models.Assets.AssetRequest", "AssetRequest")
-                        .WithMany("LineItems")
-                        .HasForeignKey("AssetRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.HasOne("IntranetPortal.Data.Models.Assets.ApproverGroup", "AssignedApproverGroup")
                         .WithMany()
@@ -1256,10 +1201,22 @@ namespace IntranetPortal.Data.Migrations
                         .HasForeignKey("RequestedAccessoryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("IntranetPortal.Data.Models.Employee", "RequestedByEmployee")
+                        .WithMany()
+                        .HasForeignKey("RequestedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("IntranetPortal.Data.Models.Assets.AssetCategory", "RequestedCategory")
                         .WithMany()
                         .HasForeignKey("RequestedCategoryId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IntranetPortal.Data.Models.Employee", "RequestedForEmployee")
+                        .WithMany()
+                        .HasForeignKey("RequestedForEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("IntranetPortal.Data.Models.Assets.AssetModel", "RequestedModel")
                         .WithMany()
@@ -1273,8 +1230,6 @@ namespace IntranetPortal.Data.Migrations
 
                     b.Navigation("ApprovedByEmployee");
 
-                    b.Navigation("AssetRequest");
-
                     b.Navigation("AssignedApproverGroup");
 
                     b.Navigation("AssignedAsset");
@@ -1283,7 +1238,11 @@ namespace IntranetPortal.Data.Migrations
 
                     b.Navigation("RequestedAccessory");
 
+                    b.Navigation("RequestedByEmployee");
+
                     b.Navigation("RequestedCategory");
+
+                    b.Navigation("RequestedForEmployee");
 
                     b.Navigation("RequestedModel");
 
@@ -1481,11 +1440,6 @@ namespace IntranetPortal.Data.Migrations
             modelBuilder.Entity("IntranetPortal.Data.Models.Assets.AssetModel", b =>
                 {
                     b.Navigation("Assets");
-                });
-
-            modelBuilder.Entity("IntranetPortal.Data.Models.Assets.AssetRequest", b =>
-                {
-                    b.Navigation("LineItems");
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Department", b =>

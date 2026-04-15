@@ -80,6 +80,52 @@ namespace IntranetPortal.Data.Data
                 }
             }
 
+            // 5. Seed Asset Categories and Approver Groups
+            if (!await context.AssetCategories.AnyAsync())
+            {
+                var itGroup = new IntranetPortal.Data.Models.Assets.ApproverGroup { Name = "Global IT Approvers" };
+                var opsGroup = new IntranetPortal.Data.Models.Assets.ApproverGroup { Name = "IT & Operations Queue" };
+                var hrGroup = new IntranetPortal.Data.Models.Assets.ApproverGroup { Name = "Facilities & HR" };
+
+                context.ApproverGroups.AddRange(itGroup, opsGroup, hrGroup);
+                await context.SaveChangesAsync();
+
+                var hwCategory = new IntranetPortal.Data.Models.Assets.AssetCategory
+                {
+                    Name = "IT Hardware",
+                    Description = "High-value, serialized equipment like laptops and servers.",
+                    RequiresApproval = true,
+                    AllowRequesterToSelectApprover = false,
+                    DefaultApproverGroup = itGroup
+                };
+
+                var accCategory = new IntranetPortal.Data.Models.Assets.AssetCategory
+                {
+                    Name = "Accessories & Peripherals",
+                    Description = "Low value items like mice.",
+                    RequiresApproval = true,
+                    AllowRequesterToSelectApprover = false,
+                    DefaultApproverGroup = opsGroup
+                };
+
+                var statCategory = new IntranetPortal.Data.Models.Assets.AssetCategory
+                {
+                    Name = "Office Stationaries",
+                    Description = "Standard office supplies.",
+                    RequiresApproval = true,
+                    AllowRequesterToSelectApprover = true
+                };
+
+                context.AssetCategories.AddRange(hwCategory, accCategory, statCategory);
+                await context.SaveChangesAsync();
+                
+                context.AssetCategoryApproverGroups.AddRange(
+                    new IntranetPortal.Data.Models.Assets.AssetCategoryApproverGroup { AssetCategoryId = hwCategory.Id, ApproverGroupId = itGroup.Id },
+                    new IntranetPortal.Data.Models.Assets.AssetCategoryApproverGroup { AssetCategoryId = accCategory.Id, ApproverGroupId = opsGroup.Id },
+                    new IntranetPortal.Data.Models.Assets.AssetCategoryApproverGroup { AssetCategoryId = statCategory.Id, ApproverGroupId = hrGroup.Id }
+                );
+            }
+
             await context.SaveChangesAsync();
         }
     }

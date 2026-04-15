@@ -4,6 +4,7 @@ using IntranetPortal.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntranetPortal.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260415081122_AddApproverGroupsTablePrefixes")]
+    partial class AddApproverGroupsTablePrefixes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -364,9 +367,6 @@ namespace IntranetPortal.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
 
-                    b.Property<int?>("FulfillmentGroupId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
@@ -384,8 +384,6 @@ namespace IntranetPortal.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DefaultApproverGroupId");
-
-                    b.HasIndex("FulfillmentGroupId");
 
                     b.HasIndex("ParentCategoryId");
 
@@ -1138,19 +1136,12 @@ namespace IntranetPortal.Data.Migrations
                         .HasForeignKey("DefaultApproverGroupId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("IntranetPortal.Data.Models.Assets.ApproverGroup", "FulfillmentGroup")
-                        .WithMany()
-                        .HasForeignKey("FulfillmentGroupId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("IntranetPortal.Data.Models.Assets.AssetCategory", "ParentCategory")
                         .WithMany("SubCategories")
                         .HasForeignKey("ParentCategoryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("DefaultApproverGroup");
-
-                    b.Navigation("FulfillmentGroup");
 
                     b.Navigation("ParentCategory");
                 });

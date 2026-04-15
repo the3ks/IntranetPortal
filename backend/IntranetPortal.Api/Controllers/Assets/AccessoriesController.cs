@@ -22,7 +22,6 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "Perm:Assets.View")]
         public async Task<IActionResult> GetAccessories()
         {
             var query = _context.Accessories
@@ -33,6 +32,17 @@ namespace IntranetPortal.Api.Controllers
 
             query = query.ApplySiteScope(_permissionService, "Perm:Assets.View");
             query = query.ApplyDepartmentScope(_permissionService, "Perm:Assets.View");
+
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
+            var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
+
+            if (!isGlobal)
+            {
+                var userGroupIds = await _context.ApproverGroupMembers.Where(m => m.EmployeeId == empId).Select(m => m.ApproverGroupId).ToListAsync();
+                query = query.Where(a => a.Category != null && 
+                                         ((a.Category.FulfillmentGroupId.HasValue && userGroupIds.Contains(a.Category.FulfillmentGroupId.Value)) ||
+                                          (a.Category.ParentCategory != null && a.Category.ParentCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(a.Category.ParentCategory.FulfillmentGroupId.Value))));
+            }
 
             var accessories = await query.OrderBy(a => a.Name).ToListAsync();
 
@@ -52,11 +62,26 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "Perm:Assets.Manage")]
         public async Task<IActionResult> CreateAccessory([FromBody] AccessoryCreateDto dto)
         {
             if (!_permissionService.ValidateSiteScope("Perm:Assets.Manage", dto.SiteId)) return Forbid();
             if (!_permissionService.ValidateDepartmentScope("Perm:Assets.Manage", dto.DepartmentId)) return Forbid();
+
+            var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
+
+            if (!isGlobal)
+            {
+                var userGroupIds = await _context.ApproverGroupMembers.Where(m => m.EmployeeId == empId).Select(m => m.ApproverGroupId).ToListAsync();
+                var cat = await _context.AssetCategories.Include(c => c.ParentCategory).FirstOrDefaultAsync(c => c.Id == dto.CategoryId);
+                
+                if (cat == null) return Forbid();
+                
+                bool hasAccess = (cat.FulfillmentGroupId.HasValue && userGroupIds.Contains(cat.FulfillmentGroupId.Value)) ||
+                                 (cat.ParentCategory != null && cat.ParentCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(cat.ParentCategory.FulfillmentGroupId.Value));
+                
+                if (!hasAccess) return Forbid();
+            }
 
             var accessory = new Accessory
             {
@@ -75,14 +100,31 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpPost("{id}/add-stock")]
-        [Authorize(Policy = "Perm:Assets.Manage")]
         public async Task<IActionResult> AddStock(int id, [FromBody] int quantity)
         {
-            var accessory = await _context.Accessories.FindAsync(id);
+            var accessory = await _context.Accessories
+                .Include(a => a.Category)
+                    .ThenInclude(c => c!.ParentCategory)
+                .FirstOrDefaultAsync(a => a.Id == id);
+            
             if (accessory == null) return NotFound();
 
             if (!_permissionService.ValidateSiteScope("Perm:Assets.Manage", accessory.SiteId)) return Forbid();
             if (!_permissionService.ValidateDepartmentScope("Perm:Assets.Manage", accessory.DepartmentId)) return Forbid();
+
+            var isGlobal = _permissionService.IsGlobal("Perm:Assets.Manage");
+            int.TryParse(User.FindFirst("EmployeeId")?.Value, out var empId);
+
+            if (!isGlobal)
+            {
+                var userGroupIds = await _context.ApproverGroupMembers.Where(m => m.EmployeeId == empId).Select(m => m.ApproverGroupId).ToListAsync();
+                if (accessory.Category == null) return Forbid();
+                
+                bool hasAccess = (accessory.Category.FulfillmentGroupId.HasValue && userGroupIds.Contains(accessory.Category.FulfillmentGroupId.Value)) ||
+                                 (accessory.Category.ParentCategory != null && accessory.Category.ParentCategory.FulfillmentGroupId.HasValue && userGroupIds.Contains(accessory.Category.ParentCategory.FulfillmentGroupId.Value));
+                
+                if (!hasAccess) return Forbid();
+            }
 
             accessory.TotalQuantity += quantity;
             accessory.AvailableQuantity += quantity;

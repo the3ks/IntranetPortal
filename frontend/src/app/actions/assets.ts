@@ -3,8 +3,9 @@ import { fetchWithAuth } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 
 // --- VIEW/FETCH ACTIONS ---
-export async function getAssetsListAction() {
-  const res = await fetchWithAuth("/api/assets", { cache: "no-store" });
+export async function getAssetsListAction(mode?: string) {
+  const url = mode ? `/api/assets?mode=${mode}` : "/api/assets";
+  const res = await fetchWithAuth(url, { cache: "no-store" });
   if (res.ok) return await res.json();
   return [];
 }
@@ -16,11 +17,67 @@ export async function getAssetRequestsAction(type: "mine" | "approvals") {
   return [];
 }
 
+export async function getCategoryApproversAction(categoryId: number, departmentId: number) {
+  const res = await fetchWithAuth(`/api/assetrequests/approvers?categoryId=${categoryId}&departmentId=${departmentId}`, { cache: "no-store" });
+  if (res.ok) return await res.json();
+  return [];
+}
+
 // --- DICTIONARIES (Categories & Models) ---
 export async function getCategoriesAction() {
   const res = await fetchWithAuth("/api/assetdictionaries/categories", { cache: "no-store" });
   if (res.ok) return await res.json();
   return [];
+}
+
+export async function getApproverGroupsAction() {
+  const res = await fetchWithAuth("/api/assetdictionaries/groups", { cache: "no-store" });
+  if (res.ok) return await res.json();
+  return [];
+}
+
+export async function createApproverGroupAction(name: string) {
+  const res = await fetchWithAuth("/api/assetdictionaries/groups", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ Name: name })
+  });
+  if (res.ok) {
+    revalidatePath("/assets");
+    return { success: true };
+  }
+  return { success: false };
+}
+
+export async function getGroupMembersAction(groupId: number) {
+  const res = await fetchWithAuth(`/api/assetdictionaries/groups/${groupId}/members`, { cache: "no-store" });
+  if (res.ok) return await res.json();
+  return [];
+}
+
+export async function getEligibleApproversAction(search?: string) {
+  const url = search ? `/api/assetdictionaries/groups/eligible-approvers?search=${encodeURIComponent(search)}` : "/api/assetdictionaries/groups/eligible-approvers";
+  const res = await fetchWithAuth(url, { cache: "no-store" });
+  if (res.ok) return await res.json();
+  return [];
+}
+
+export async function addGroupMemberAction(groupId: number, employeeId: number) {
+  const res = await fetchWithAuth(`/api/assetdictionaries/groups/${groupId}/members`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(employeeId)
+  });
+  if (res.ok) revalidatePath("/assets");
+  return res.ok;
+}
+
+export async function removeGroupMemberAction(groupId: number, employeeId: number) {
+  const res = await fetchWithAuth(`/api/assetdictionaries/groups/${groupId}/members/${employeeId}`, {
+    method: "DELETE"
+  });
+  if (res.ok) revalidatePath("/assets");
+  return res.ok;
 }
 
 export async function getModelsAction(categoryId?: number) {
@@ -150,7 +207,7 @@ export async function createRequestAction(data: any) {
 }
 
 export async function approveRequestAction(id: number) {
-  const res = await fetchWithAuth(`/api/assetrequests/${id}/approve`, {
+  const res = await fetchWithAuth(`/api/assetrequests/line-items/${id}/approve`, {
     method: "POST",
   });
   if (res.ok) {
@@ -161,7 +218,7 @@ export async function approveRequestAction(id: number) {
 }
 
 export async function fulfillRequestAction(id: number, data: any) {
-  const res = await fetchWithAuth(`/api/assetrequests/${id}/fulfill`, {
+  const res = await fetchWithAuth(`/api/assetrequests/line-items/${id}/fulfill`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

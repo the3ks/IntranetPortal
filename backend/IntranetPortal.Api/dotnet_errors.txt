@@ -1,0 +1,20 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  IntranetPortal.Data -> D:\DEV\IntranetPortal\main\backend\IntranetPortal.Data\bin\Debug\net10.0\IntranetPortal.Data.dll
+D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\Controllers\Assets\AssetsController.cs(96,97): error CS0128: A local variable or function named 'empId' is already defined in this scope [D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\IntranetPortal.Api.csproj]
+D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\Controllers\Assets\AssetsController.cs(136,17): error CS0128: A local variable or function named 'adminId' is already defined in this scope [D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\IntranetPortal.Api.csproj]
+D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\Controllers\Assets\AssetsController.cs(117,86): warning CS8602: Dereference of a possibly null reference. [D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\IntranetPortal.Api.csproj]
+D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\Controllers\Assets\AssetsController.cs(192,17): error CS0128: A local variable or function named 'adminId' is already defined in this scope [D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\IntranetPortal.Api.csproj]
+D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\Controllers\Assets\AssetsController.cs(170,57): warning CS8602: Dereference of a possibly null reference. [D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\IntranetPortal.Api.csproj]
+
+Build FAILED.
+
+D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\Controllers\Assets\AssetsController.cs(117,86): warning CS8602: Dereference of a possibly null reference. [D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\IntranetPortal.Api.csproj]
+D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\Controllers\Assets\AssetsController.cs(170,57): warning CS8602: Dereference of a possibly null reference. [D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\IntranetPortal.Api.csproj]
+D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\Controllers\Assets\AssetsController.cs(96,97): error CS0128: A local variable or function named 'empId' is already defined in this scope [D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\IntranetPortal.Api.csproj]
+D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\Controllers\Assets\AssetsController.cs(136,17): error CS0128: A local variable or function named 'adminId' is already defined in this scope [D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\IntranetPortal.Api.csproj]
+D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\Controllers\Assets\AssetsController.cs(192,17): error CS0128: A local variable or function named 'adminId' is already defined in this scope [D:\DEV\IntranetPortal\main\backend\IntranetPortal.Api\IntranetPortal.Api.csproj]
+    2 Warning(s)
+    3 Error(s)
+
+Time Elapsed 00:00:02.70

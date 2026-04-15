@@ -1,16 +1,18 @@
 "use client";
 import { useState, useEffect } from "react";
 import { getAssetsListAction } from "@/app/actions/assets";
+import AssetRequestsView from "./AssetRequestsView";
 
 export default function MyAssetsView() {
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isApprover, setIsApprover] = useState(false);
 
   useEffect(() => {
     async function loadAssets() {
       try {
-        const data = await getAssetsListAction();
-        setAssets(data); 
+        const data = await getAssetsListAction("my");
+        setAssets(data);
       } catch (e) {
         console.error(e);
       } finally {
@@ -18,6 +20,13 @@ export default function MyAssetsView() {
       }
     }
     loadAssets();
+
+    /* Check if current user processes Approvals */
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5254";
+    fetch(`${backendUrl}/api/assetrequests/is-approver`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : false)
+      .then(data => setIsApprover(data))
+      .catch(() => { });
   }, []);
 
   if (loading) {
@@ -26,7 +35,7 @@ export default function MyAssetsView() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       <div className="flex justify-between items-center bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
         <div>
           <h2 className="text-xl font-bold text-foreground">Your Assigned Hardware</h2>
@@ -54,7 +63,7 @@ export default function MyAssetsView() {
               </div>
               <h3 className="font-bold text-foreground text-lg">{asset.modelName || "Generic Asset"}</h3>
               <p className="text-sm text-foreground/60 mb-4">{asset.manufacturer}</p>
-              
+
               <div className="space-y-2 mt-4 pt-4 border-t border-gray-50 font-mono text-xs text-foreground/80">
                 <div className="flex justify-between">
                   <span>Tag ID:</span>
@@ -69,6 +78,20 @@ export default function MyAssetsView() {
           ))}
         </div>
       )}
+
+      {/* Embedded Requisitions & Dashboard Views */}
+      <div className="pt-8 grid grid-cols-1 gap-12">
+        <div className="w-full">
+          <AssetRequestsView type="mine" />
+        </div>
+
+        {isApprover && (
+          <div className="w-full">
+            <AssetRequestsView type="approvals" />
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
