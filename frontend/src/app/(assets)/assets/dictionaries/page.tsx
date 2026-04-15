@@ -30,7 +30,34 @@ export default function DictionariesPage() {
   const fetchData = async () => {
     setLoading(true);
     const [cats, mods, grps] = await Promise.all([getCategoriesAction(), getModelsAction(), getApproverGroupsAction()]);
-    setCategories(cats);
+
+    const organizeCategories = (catsList: any[]) => {
+      const topLevel = catsList.filter(c => !c.parentCategoryId);
+      const organized: any[] = [];
+      const addedIds = new Set<number>();
+
+      const addWithChildren = (cat: any, depth = 0) => {
+        if (addedIds.has(cat.id)) return;
+        organized.push({ ...cat, depth });
+        addedIds.add(cat.id);
+        const children = catsList.filter(c => c.parentCategoryId === cat.id);
+        // Add children underneath
+        children.forEach(child => addWithChildren(child, depth + 1));
+      };
+
+      topLevel.forEach(c => addWithChildren(c, 0));
+
+      // Catch any orphans
+      catsList.forEach(c => {
+        if (!addedIds.has(c.id)) {
+          addWithChildren(c, 0);
+        }
+      });
+
+      return organized;
+    };
+
+    setCategories(organizeCategories(cats));
     setModels(mods);
     setGroups(grps);
     setLoading(false);
@@ -108,7 +135,7 @@ export default function DictionariesPage() {
         {showCatForm && (
           <form onSubmit={handleSaveCategory} className="p-5 border-b border-blue-50 bg-blue-50/20 grid gap-4">
             <h3 className="font-bold text-blue-700">{editingCategoryId ? "Edit Category" : "Create New Category"}</h3>
-            <div><label className="text-xs font-bold text-foreground/60 uppercase">Category Name</label><input required className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-blue-400 bg-white" value={newCatName} onChange={e => setNewCatName(e.target.value)} /></div>
+            <div><label className="text-xs font-bold text-foreground/60 uppercase">Category Name</label><input required className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-blue-400 bg-background" value={newCatName} onChange={e => setNewCatName(e.target.value)} /></div>
             <div>
               <label className="text-xs font-bold text-foreground/60 uppercase">Parent Category (Optional)</label>
               <select className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-blue-400 bg-card" value={newCatParentId} onChange={e => setNewCatParentId(e.target.value)}>
@@ -116,10 +143,10 @@ export default function DictionariesPage() {
                 {categories.filter(c => c.isActive && c.id !== editingCategoryId).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-            <div><label className="text-xs font-bold text-foreground/60 uppercase">Description</label><input className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-blue-400 bg-white" value={newCatDesc} onChange={e => setNewCatDesc(e.target.value)} /></div>
+            <div><label className="text-xs font-bold text-foreground/60 uppercase">Description</label><input className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-blue-400 bg-background" value={newCatDesc} onChange={e => setNewCatDesc(e.target.value)} /></div>
 
             {!newCatParentId && (
-              <div className="flex flex-col gap-2 p-3 bg-white rounded-lg border border-gray-200">
+              <div className="flex flex-col gap-2 p-3 bg-card rounded-lg border border-border/50 shadow-sm">
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground/90 cursor-pointer">
                   <input type="checkbox" checked={newCatReqApp} onChange={e => setNewCatReqApp(e.target.checked)} className="w-4 h-4 text-blue-600 rounded" />
                   Requires Manager Approval to Request
@@ -135,7 +162,7 @@ export default function DictionariesPage() {
                     {!newCatAllowManual && (
                       <div className="ml-6 mt-1">
                         <label className="text-xs font-bold text-foreground/60 uppercase">Default Approver Group</label>
-                        <select className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-blue-400 bg-card" value={newCatGroupId} onChange={e => setNewCatGroupId(e.target.value)}>
+                        <select className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-blue-400 bg-background" value={newCatGroupId} onChange={e => setNewCatGroupId(e.target.value)}>
                           <option value="">-- No Default Group selected --</option>
                           {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                         </select>
@@ -144,11 +171,11 @@ export default function DictionariesPage() {
                   </>
                 )}
 
-                <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="mt-3 pt-3 border-t border-border/50">
                   <label className="text-xs font-bold text-emerald-600 uppercase">Admin Management Group (Fulfillment)</label>
-                  <select className="w-full mt-1 border border-emerald-500/50 rounded-lg p-2 text-sm outline-none focus:border-emerald-400 bg-emerald-50/10 text-emerald-900" value={newCatFulfillmentGroupId} onChange={e => setNewCatFulfillmentGroupId(e.target.value)}>
-                    <option value="">-- Global Admins Only --</option>
-                    {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  <select className="w-full mt-1 border border-emerald-500/50 rounded-lg p-2 text-sm outline-none focus:border-emerald-400 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" value={newCatFulfillmentGroupId} onChange={e => setNewCatFulfillmentGroupId(e.target.value)}>
+                    <option value="" className="text-foreground">-- Global Admins Only --</option>
+                    {groups.map(g => <option key={g.id} value={g.id} className="text-foreground">{g.name}</option>)}
                   </select>
                 </div>
               </div>
