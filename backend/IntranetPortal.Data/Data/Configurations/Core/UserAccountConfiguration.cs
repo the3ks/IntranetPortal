@@ -10,6 +10,9 @@ namespace IntranetPortal.Data.Data.Configurations.Core
         {
             builder.ToTable("Core_UserAccounts");
 
+            builder.Property(u => u.Email).HasMaxLength(256).IsRequired();
+            builder.HasIndex(u => u.Email).IsUnique();
+            builder.Property(u => u.SecurityStamp).HasDefaultValue(1);
         }
     }
 }

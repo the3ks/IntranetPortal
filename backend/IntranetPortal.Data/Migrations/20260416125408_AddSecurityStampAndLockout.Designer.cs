@@ -4,6 +4,7 @@ using IntranetPortal.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntranetPortal.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260416125408_AddSecurityStampAndLockout")]
+    partial class AddSecurityStampAndLockout
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -647,55 +650,6 @@ namespace IntranetPortal.Data.Migrations
                     b.HasIndex("TeamId");
 
                     b.ToTable("Core_Employees", (string)null);
-                });
-
-            modelBuilder.Entity("IntranetPortal.Data.Models.LoginChallenge", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ChallengeId")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)");
-
-                    b.Property<DateTimeOffset?>("ConsumedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Nonce")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("varchar(128)");
-
-                    b.Property<string>("NormalizedEmail")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
-
-                    b.Property<int?>("UserAccountId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChallengeId")
-                        .IsUnique();
-
-                    b.HasIndex("ExpiresAt");
-
-                    b.HasIndex("UserAccountId");
-
-                    b.HasIndex("NormalizedEmail", "CreatedAt");
-
-                    b.ToTable("Core_LoginChallenges", (string)null);
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Permission", b =>
@@ -1394,16 +1348,6 @@ namespace IntranetPortal.Data.Migrations
                     b.Navigation("Site");
 
                     b.Navigation("Team");
-                });
-
-            modelBuilder.Entity("IntranetPortal.Data.Models.LoginChallenge", b =>
-                {
-                    b.HasOne("IntranetPortal.Data.Models.UserAccount", "UserAccount")
-                        .WithMany()
-                        .HasForeignKey("UserAccountId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("UserAccount");
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.RoleDelegation", b =>

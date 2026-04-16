@@ -30,6 +30,15 @@ When compiling the application for a live corporate server, Next.js **halts trac
 
 > **Bonus Enterprise Note:** If you are securely hosting on modern container orchestration platforms (like Docker, IIS, AWS, or Vercel), you do not need to modify `.env.production` at all! You can manually type the `NEXT_PUBLIC_API_URL` secret directly into your server's native Environment Variable configuration manager, and Next.js will automatically detect and absorb it flawlessly at runtime!
 
+### Challenge Login Note (Important)
+
+If you enable `ENABLE_CHALLENGE_LOGIN=true` on the frontend, the backend should be configured with a stable private key in secrets/config:
+
+- Backend key setting: `ChallengeEncryption:PrivateKeyPem`
+- Without this key, the backend falls back to an in-memory RSA key generated at startup.
+- Fallback is acceptable for local development, but can cause intermittent login failures after API restarts or across multiple API instances.
+- Keep TLS enabled at all times. Challenge login is defense-in-depth and does not replace HTTPS/TLS.
+
 ---
 
 ## 🚀 Getting Started Locally

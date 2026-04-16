@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Linq;
 using IntranetPortal.Data.Data;
 using IntranetPortal.Data.Models;
 using Microsoft.EntityFrameworkCore;
+using IntranetPortal.Api.Security;
 
 namespace IntranetPortal.Api.Controllers
 {
@@ -17,43 +20,205 @@ namespace IntranetPortal.Api.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _config;
         private readonly IWebHostEnvironment _env;
+        private readonly IChallengeCryptoService _challengeCryptoService;
 
-        public AuthController(ApplicationDbContext context, IConfiguration config, IWebHostEnvironment env)
+        public AuthController(ApplicationDbContext context, IConfiguration config, IWebHostEnvironment env, IChallengeCryptoService challengeCryptoService)
         {
             _context = context;
             _config = config;
             _env = env;
+            _challengeCryptoService = challengeCryptoService;
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var user = await _context.UserAccounts
+            request.Email = NormalizeEmail(request.Email);
+
+            var user = await LoadUserForAuthenticationAsync(request.Email);
+
+            if (user == null)
+            {
+                return Unauthorized(new { Message = "Invalid email or password." });
+            }
+
+            if (user.LockedUntil.HasValue && user.LockedUntil > DateTimeOffset.UtcNow)
+            {
+                return LockedOutResponse();
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            {
+                RegisterFailedLogin(user);
+                await _context.SaveChangesAsync();
+                return Unauthorized(new { Message = "Invalid email or password." });
+            }
+
+            RegisterSuccessfulLogin(user);
+            await _context.SaveChangesAsync();
+
+            return await CreateLoginSuccessResponseAsync(user);
+        }
+
+        [HttpPost("challenge/start")]
+        [EnableRateLimiting("login")]
+        public async Task<IActionResult> StartChallenge([FromBody] ChallengeStartRequest request)
+        {
+            var normalizedEmail = NormalizeEmail(request.Email);
+            var userId = await _context.UserAccounts
+                .AsNoTracking()
+                .Where(u => u.Email == normalizedEmail && u.IsActive)
+                .Select(u => (int?)u.Id)
+                .FirstOrDefaultAsync();
+
+            var challenge = new LoginChallenge
+            {
+                ChallengeId = Guid.NewGuid().ToString("N"),
+                NormalizedEmail = normalizedEmail,
+                Nonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24)),
+                ExpiresAt = DateTimeOffset.UtcNow.AddSeconds(60),
+                UserAccountId = userId
+            };
+
+            _context.LoginChallenges.Add(challenge);
+            await _context.SaveChangesAsync();
+
+            return Ok(new ChallengeStartResponse
+            {
+                ChallengeId = challenge.ChallengeId,
+                Nonce = challenge.Nonce,
+                ExpiresAt = challenge.ExpiresAt,
+                Algorithm = _challengeCryptoService.Algorithm,
+                PublicKeyPem = _challengeCryptoService.ExportPublicKeyPem()
+            });
+        }
+
+        [HttpPost("challenge/complete")]
+        [EnableRateLimiting("login")]
+        public async Task<IActionResult> CompleteChallenge([FromBody] ChallengeCompleteRequest request)
+        {
+            request.Email = NormalizeEmail(request.Email);
+
+            var challenge = await _context.LoginChallenges
+                .FirstOrDefaultAsync(c => c.ChallengeId == request.ChallengeId && c.NormalizedEmail == request.Email);
+
+            if (challenge == null || challenge.ConsumedAt.HasValue || challenge.ExpiresAt <= DateTimeOffset.UtcNow)
+            {
+                return Unauthorized(new { Message = "Invalid or expired login challenge." });
+            }
+
+            challenge.ConsumedAt = DateTimeOffset.UtcNow;
+
+            var user = challenge.UserAccountId.HasValue
+                ? await LoadUserForAuthenticationAsync(challenge.UserAccountId.Value)
+                : null;
+
+            if (user == null)
+            {
+                await _context.SaveChangesAsync();
+                return Unauthorized(new { Message = "Invalid email or password." });
+            }
+
+            if (user.LockedUntil.HasValue && user.LockedUntil > DateTimeOffset.UtcNow)
+            {
+                await _context.SaveChangesAsync();
+                return LockedOutResponse();
+            }
+
+            string password;
+            try
+            {
+                password = _challengeCryptoService.DecryptPassword(request.EncryptedPassword);
+            }
+            catch (CryptographicException)
+            {
+                RegisterFailedLogin(user);
+                await _context.SaveChangesAsync();
+                return Unauthorized(new { Message = "Invalid email or password." });
+            }
+            catch (FormatException)
+            {
+                RegisterFailedLogin(user);
+                await _context.SaveChangesAsync();
+                return Unauthorized(new { Message = "Invalid email or password." });
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            {
+                RegisterFailedLogin(user);
+                await _context.SaveChangesAsync();
+                return Unauthorized(new { Message = "Invalid email or password." });
+            }
+
+            RegisterSuccessfulLogin(user);
+            await _context.SaveChangesAsync();
+
+            return await CreateLoginSuccessResponseAsync(user);
+        }
+
+        private static string NormalizeEmail(string email)
+        {
+            return email.Trim().ToLower();
+        }
+
+        private async Task<UserAccount?> LoadUserForAuthenticationAsync(string normalizedEmail)
+        {
+            return await _context.UserAccounts
                 .Include(u => u.Employee)
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
                         .ThenInclude(r => r.RolePermissions)
                             .ThenInclude(rp => rp.Permission)
-                .FirstOrDefaultAsync(u => u.Email == request.Email);
-            
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-            {
-                return Unauthorized(new { Message = "Invalid email or password." });
-            }
+                .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive);
+        }
 
+        private async Task<UserAccount?> LoadUserForAuthenticationAsync(int userId)
+        {
+            return await _context.UserAccounts
+                .Include(u => u.Employee)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                        .ThenInclude(r => r.RolePermissions)
+                            .ThenInclude(rp => rp.Permission)
+                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+        }
+
+        private static IActionResult LockedOutResponse()
+        {
+            return new UnauthorizedObjectResult(new { Message = "Account is temporarily locked. Please try again later." });
+        }
+
+        private static void RegisterFailedLogin(UserAccount user)
+        {
+            user.FailedLoginAttempts++;
+            if (user.FailedLoginAttempts >= 10)
+            {
+                user.LockedUntil = DateTimeOffset.UtcNow.AddMinutes(15);
+            }
+        }
+
+        private static void RegisterSuccessfulLogin(UserAccount user)
+        {
+            user.FailedLoginAttempts = 0;
+            user.LockedUntil = null;
+        }
+
+        private async Task<IActionResult> CreateLoginSuccessResponseAsync(UserAccount user)
+        {
             var activeDelegations = await _context.RoleDelegations
                 .Include(rd => rd.UserRole)
                     .ThenInclude(ur => ur.Role)
                         .ThenInclude(r => r.RolePermissions)
                             .ThenInclude(rp => rp.Permission)
-                .Where(rd => rd.SubstituteUserId == user.Id && 
-                             rd.IsActive && 
-                             rd.StartDate <= DateTimeOffset.UtcNow && 
+                .Where(rd => rd.SubstituteUserId == user.Id &&
+                             rd.IsActive &&
+                             rd.StartDate <= DateTimeOffset.UtcNow &&
                              rd.EndDate >= DateTimeOffset.UtcNow)
                 .ToListAsync();
 
             var token = GenerateJwt(user, activeDelegations);
-            
+
             // Temporary backward compatibility for the Next.js UI Role string
             var legacyRole = user.UserRoles.Any(ur => ur.Role.Name == "Admin") ? "Admin" : "Staff";
             return Ok(new { Token = token, Role = legacyRole });
@@ -144,7 +309,9 @@ namespace IntranetPortal.Api.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim("SecurityStamp", user.SecurityStamp.ToString()),
                 new Claim("EmployeeId", user.EmployeeId?.ToString() ?? ""),
+                new Claim("FullName", user.Employee?.FullName ?? ""),
                 new Claim("SiteId", user.Employee?.SiteId.ToString() ?? ""),
                 new Claim("DepartmentId", user.Employee?.DepartmentId.ToString() ?? ""),
                 new Claim("TeamId", user.Employee?.TeamId?.ToString() ?? "")
@@ -210,5 +377,26 @@ namespace IntranetPortal.Api.Controllers
     {
         public required string Email { get; set; }
         public required string Password { get; set; }
+    }
+
+    public class ChallengeStartRequest
+    {
+        public required string Email { get; set; }
+    }
+
+    public class ChallengeStartResponse
+    {
+        public required string ChallengeId { get; set; }
+        public required string Nonce { get; set; }
+        public DateTimeOffset ExpiresAt { get; set; }
+        public required string Algorithm { get; set; }
+        public required string PublicKeyPem { get; set; }
+    }
+
+    public class ChallengeCompleteRequest
+    {
+        public required string Email { get; set; }
+        public required string ChallengeId { get; set; }
+        public required string EncryptedPassword { get; set; }
     }
 }

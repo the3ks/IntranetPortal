@@ -53,7 +53,7 @@ The Core Monolith issues a JWT upon login and saves it natively as a cookie name
     }
     ```
 - Use Native Controller Authorization: Secure endpoints using attributes like `[Authorize(Policy = "Module.Action")]`.
-- **CRITICAL DATA RULE (Identity & Scopes):** The Core Monolith inherently packs four exact identity claims inside the `auth_token`: `"EmployeeId"`, `"SiteId"`, `"DepartmentId"`, and `"TeamId"`.
+- **CRITICAL DATA RULE (Identity & Scopes):** The Core Monolith inherently packs five exact identity claims inside the `auth_token`: `"EmployeeId"`, `"FullName"`, `"SiteId"`, `"DepartmentId"`, and `"TeamId"`.
   - **Identity:** To associate a physical record with a user, extract loosely: `user.FindFirst("EmployeeId")?.Value`. Do not use `NameIdentifier`.
   - **Scoping (The Frozen Snapshot):** If the microservice enforces geographical or departmental data boundaries (e.g., users only seeing local orders), DO NOT query the Core API. Extract the scope directly from the token (e.g., `int.Parse(user.FindFirst("SiteId").Value)`) and enforce it dynamically inside your native EF Core `.Where()` queries or save it directly alongside transaction data.
 
@@ -105,6 +105,11 @@ Ensure users do not feel like they have traversed repositories. The Next.js visu
   - Because `fetch` forces `{ credentials: "include" }` cross-port, the API endpoints **CANNOT** use `.AllowAnyOrigin()`.
   - Local Dev MUST explicitly use `policy.SetIsOriginAllowed(_ => true).AllowCredentials()`.
   - Production MUST enforce `.WithOrigins("https://your-production-subdomain...")`.
+
+---
+
+## 6. Workspace AI Constraints (.geminirules)
+Always ensure that the microservice repository contains its own `.geminirules` file. You can copy the `microservice-template.geminirules` from the main (`docs/`) repository to the root of the microservice directory. This file dictates everyday coding rules (like SVG constraints, DTO enforcement, and EF grouping) that the Assistant uses continuously.
 
 ---
 

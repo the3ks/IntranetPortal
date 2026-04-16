@@ -101,7 +101,7 @@ namespace IntranetPortal.Api.Controllers
             var employee = new Employee
             {
                 FullName = dto.FullName,
-                Email = dto.Email,
+                    Email = dto.Email.Trim().ToLower(),
                 PositionId = dto.PositionId,
                 DepartmentId = dto.DepartmentId,
                 TeamId = dto.TeamId,
@@ -144,7 +144,7 @@ namespace IntranetPortal.Api.Controllers
             if (dto.SiteId != employee.SiteId && !_permissionService.ValidateSiteScope("HR.Employee.Edit", dto.SiteId)) return Forbid();
 
             employee.FullName = dto.FullName;
-            employee.Email = dto.Email;
+                employee.Email = dto.Email.Trim().ToLower();
             employee.PositionId = dto.PositionId;
             employee.DepartmentId = dto.DepartmentId;
             employee.TeamId = dto.TeamId;
@@ -167,6 +167,8 @@ namespace IntranetPortal.Api.Controllers
                 {
                     userAcc.IsActive = true;
                     userAcc.Email = employee.Email; // Sync email if changed structurally
+                    userAcc.FailedLoginAttempts = 0;
+                    userAcc.LockedUntil = null;
                 }
             }
             else
@@ -174,6 +176,7 @@ namespace IntranetPortal.Api.Controllers
                 if (userAcc != null)
                 {
                     userAcc.IsActive = false;
+                    userAcc.SecurityStamp++;
                 }
             }
 

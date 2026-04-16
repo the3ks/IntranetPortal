@@ -41,9 +41,22 @@ namespace IntranetPortal.Api.Security
             using var scope = _serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+            // Validate SecurityStamp and IsActive before doing any permission checks
+            var stampString = context.User.Claims.FirstOrDefault(c => c.Type == "SecurityStamp")?.Value;
+            if (!int.TryParse(stampString, out int tokenStamp))
+                return;
+
+            var account = await dbContext.UserAccounts
+                .Where(u => u.Id == userId)
+                .Select(u => new { u.IsActive, u.SecurityStamp })
+                .FirstOrDefaultAsync();
+
+            if (account == null || !account.IsActive || account.SecurityStamp != tokenStamp)
+                return;
+
             // Super Admin Bypass Guard
             var isMachineAdmin = await dbContext.UserAccounts
-                .Where(u => u.Id == userId)
+                .Where(u => u.Id == userId && u.IsActive)
                 .SelectMany(u => u.UserRoles)
                 .SelectMany(ur => ur.Role.RolePermissions)
                 .AnyAsync(rp => rp.Permission.Name == "System.FullAccess");
@@ -56,7 +69,7 @@ namespace IntranetPortal.Api.Security
 
             // Strict Matrix Dependency Engine
             var hasAccess = await dbContext.UserAccounts
-                .Where(u => u.Id == userId)
+                .Where(u => u.Id == userId && u.IsActive)
                 .SelectMany(u => u.UserRoles)
                 .SelectMany(ur => ur.Role.RolePermissions)
                 .AnyAsync(rp => rp.Permission.Name == requirement.Permission);

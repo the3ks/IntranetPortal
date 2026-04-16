@@ -140,7 +140,8 @@ namespace IntranetPortal.Api.Controllers
                 return BadRequest("Secure boundaries require standard multi-character metrics minimum perfectly exactly.");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-            await _context.SaveChangesAsync();
+                user.SecurityStamp++;
+                await _context.SaveChangesAsync();
             return Ok(new { Message = "Authentication credentials structurally redefined flawlessly." });
         }
     }

@@ -1,0 +1,23 @@
+# Standalone Microservice - AI Assistant Rules
+
+Whenever you are generating, refactoring, or modifying code within this standalone microservice repository, you MUST adhere to the following architectural rules. This ensures perfect continuity with the core IntranetPortal monolith.
+
+## 1. Entity Framework Configurations
+- Do NOT clutter the `DbContext.cs` file's `OnModelCreating` method with inline `.ToTable()` or `.HasOne()` declarations.
+- **Rule:** Group its Entity configurations inside dedicated folders (e.g., `Data/Configurations/`).
+- Create a specific configuration class implementing `IEntityTypeConfiguration<T>` for each Entity.
+- The `DbContext` will automatically pick these up via `modelBuilder.ApplyConfigurationsFromAssembly(...)`.
+
+## 2. Backend HTTP API Layer (.NET)
+- When crossing the API boundary (Controllers), never expose EF Core Entities directly. Use bounded Data Transfer Objects (DTOs) tailored exactly for the module's REST inputs/outputs.
+
+## 3. Audit Logging Guidelines
+- Audit logs MUST be implemented as localized, module-specific tables with strong foreign keys to the parent entities rather than relying on a single generic global audit table in the monolith. This enforces strict modularity and high-performance indexing.
+
+## 4. UI SVG Iconography
+- Do NOT install or use 3rd-party React components for icons (e.g. `lucide-react`, `@heroicons/react`).
+- Maintain visual consistency by pasting raw, inline `<svg>` elements matching the exact visual style of the main application (e.g. Heroicons, `strokeWidth={2}`).
+
+## 5. Frontend Layouts
+- Root wrappers (`layout.tsx`/`page.tsx`) across major Next.js routes within this microservice MUST strictly use `<div className="max-w-7xl mx-auto space-y-8">`.
+- Do NOT inject arbitrary native paddings (e.g., `p-8`, `px-4`) or nested structural containers (e.g., `bg-white min-h-[600px]`) into these entry points, so the UI mimics the parent portal perfectly.

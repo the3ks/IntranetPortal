@@ -1,13 +1,48 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { loginAction } from "@/app/actions/auth";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { loginWithChallenge } from "@/lib/authChallenge";
 import { siteConfig } from "@/config/site";
 import Image from "next/image";
 
 export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState(loginAction, { error: "" });
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [isPending, setIsPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setIsPending(true);
+
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get("email")?.toString() ?? "";
+    const password = formData.get("password")?.toString() ?? "";
+
+    if (!email || !password) {
+      setError("Email and password are required.");
+      setIsPending(false);
+      return;
+    }
+
+    try {
+      const res = await loginWithChallenge(email, password);
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        setError(payload.message || payload.error || "Invalid credentials.");
+        setIsPending(false);
+        return;
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch (e: any) {
+      setError(`Connection failed: ${e?.message || "Unknown error"}`);
+      setIsPending(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -27,12 +62,12 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-card py-8 px-8 shadow-2xl sm:rounded-3xl border border-border/50">
-          <form className="space-y-6" action={formAction}>
-            {state?.error && (
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-xl">
                 <div className="flex">
                   <div className="ml-3">
-                    <p className="text-sm text-red-700 font-medium">{state.error}</p>
+                    <p className="text-sm text-red-700 font-medium">{error}</p>
                   </div>
                 </div>
               </div>

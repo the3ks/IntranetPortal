@@ -272,14 +272,15 @@ namespace IntranetPortal.Api.Controllers
 
                 var isNew = false;
                 var isModified = false;
-                var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email.ToLower() == rec.Email.ToLower().Trim());
+                var normalizedEmail = rec.Email.Trim().ToLower();
+                var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email.ToLower() == normalizedEmail);
                 
                 if (employee == null)
                 {
                     employee = new Employee
                     {
                         FullName = rec.FullName.Trim(),
-                        Email = rec.Email.Trim(),
+                        Email = normalizedEmail,
                         PositionId = position?.Id,
                         DepartmentId = dept.Id,
                         TeamId = team?.Id,
@@ -305,28 +306,44 @@ namespace IntranetPortal.Api.Controllers
                 else
                 {
                     var allowStr = rec.AllowLogin?.Trim().ToLower() ?? "yes";
+                    var existingAcc = await _context.UserAccounts.FirstOrDefaultAsync(u => u.EmployeeId == employee.Id);
+
                     if (allowStr == "yes" || allowStr == "true" || allowStr == "1" || allowStr == "y")
                     {
-                        var existingAcc = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Email == employee.Email);
                         if (existingAcc == null)
                         {
                             var userAcc = new UserAccount
                             {
-                                Email = employee.Email,
+                                Email = normalizedEmail,
                                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
                                 IsActive = true,
                                 Employee = employee
                             };
                             _context.UserAccounts.Add(userAcc);
                         }
+                        else
+                        {
+                            existingAcc.Email = normalizedEmail;
+                            existingAcc.IsActive = true;
+                            existingAcc.FailedLoginAttempts = 0;
+                            existingAcc.LockedUntil = null;
+                        }
                     }
+                    else if (existingAcc != null && existingAcc.IsActive)
+                    {
+                        existingAcc.IsActive = false;
+                        existingAcc.SecurityStamp++;
+                    }
+
                     if (employee.FullName != rec.FullName.Trim() ||
+                        employee.Email != normalizedEmail ||
                         employee.PositionId != position?.Id ||
                         employee.DepartmentId != dept.Id ||
                         employee.TeamId != team?.Id ||
                         employee.SiteId != site.Id)
                     {
                         employee.FullName = rec.FullName.Trim();
+                        employee.Email = normalizedEmail;
                         employee.PositionId = position?.Id;
                         employee.DepartmentId = dept.Id;
                         employee.TeamId = team?.Id;

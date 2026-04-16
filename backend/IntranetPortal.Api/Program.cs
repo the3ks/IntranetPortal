@@ -1,3 +1,5 @@
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using IntranetPortal.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -37,6 +39,19 @@ builder.Services.AddCors(options =>
 // Configure Multi-Tenant Security Engine native contexts
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IntranetPortal.Api.Security.IPermissionService, IntranetPortal.Api.Security.PermissionService>();
+builder.Services.AddSingleton<IntranetPortal.Api.Security.IChallengeCryptoService, IntranetPortal.Api.Security.ChallengeCryptoService>();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("login", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 10;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = 429;
+});
 
 builder.Services.AddControllers()
     .AddJsonOptions(options => 
@@ -98,6 +113,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRateLimiter();
 app.UseCors("CorsPolicy");
 
 app.UseAuthentication();
