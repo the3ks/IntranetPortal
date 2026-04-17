@@ -16,6 +16,7 @@ namespace IntranetPortal.Data.Data
         public DbSet<SystemModule> SystemModules { get; set; }
         public DbSet<UserAccount> UserAccounts { get; set; }
         public DbSet<LoginChallenge> LoginChallenges { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         // Advanced Scalable Permission Matrix
         public DbSet<Role> Roles { get; set; }

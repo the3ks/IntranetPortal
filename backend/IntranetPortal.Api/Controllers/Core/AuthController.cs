@@ -10,6 +10,7 @@ using IntranetPortal.Data.Data;
 using IntranetPortal.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using IntranetPortal.Api.Security;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace IntranetPortal.Api.Controllers
 {
@@ -21,13 +22,15 @@ namespace IntranetPortal.Api.Controllers
         private readonly IConfiguration _config;
         private readonly IWebHostEnvironment _env;
         private readonly IChallengeCryptoService _challengeCryptoService;
+        private readonly IMemoryCache _cache;
 
-        public AuthController(ApplicationDbContext context, IConfiguration config, IWebHostEnvironment env, IChallengeCryptoService challengeCryptoService)
+        public AuthController(ApplicationDbContext context, IConfiguration config, IWebHostEnvironment env, IChallengeCryptoService challengeCryptoService, IMemoryCache cache)
         {
             _context = context;
             _config = config;
             _env = env;
             _challengeCryptoService = challengeCryptoService;
+            _cache = cache;
         }
 
         [HttpPost("login")]
@@ -35,27 +38,39 @@ namespace IntranetPortal.Api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             request.Email = NormalizeEmail(request.Email);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+            var lockoutKey = $"lockout_{ipAddress}_{request.Email}";
+
+            if (_cache.TryGetValue(lockoutKey, out _))
+            {
+                await LogAuditAsync(null, request.Email, "Login Blocked by IP+Email Lockout");
+                await _context.SaveChangesAsync();
+                return LockedOutResponse();
+            }
 
             var user = await LoadUserForAuthenticationAsync(request.Email);
 
             if (user == null)
             {
+                await RegisterIPFailedLogin(ipAddress, request.Email, null);
                 return Unauthorized(new { Message = "Invalid email or password." });
             }
 
             if (user.LockedUntil.HasValue && user.LockedUntil > DateTimeOffset.UtcNow)
             {
+                await LogAuditAsync(user.Id, request.Email, "Login Blocked by Account Lockout");
+                await _context.SaveChangesAsync();
                 return LockedOutResponse();
             }
 
             if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
-                RegisterFailedLogin(user);
-                await _context.SaveChangesAsync();
+                await RegisterIPFailedLogin(ipAddress, request.Email, user);
                 return Unauthorized(new { Message = "Invalid email or password." });
             }
 
             RegisterSuccessfulLogin(user);
+            await LogAuditAsync(user.Id, request.Email, "Login Success");
             await _context.SaveChangesAsync();
 
             return await CreateLoginSuccessResponseAsync(user);
@@ -122,6 +137,7 @@ namespace IntranetPortal.Api.Controllers
 
             if (user.LockedUntil.HasValue && user.LockedUntil > DateTimeOffset.UtcNow)
             {
+                await LogAuditAsync(user.Id, request.Email, "Login Blocked by Account Lockout");
                 await _context.SaveChangesAsync();
                 return LockedOutResponse();
             }
@@ -133,28 +149,103 @@ namespace IntranetPortal.Api.Controllers
             }
             catch (CryptographicException)
             {
-                RegisterFailedLogin(user);
-                await _context.SaveChangesAsync();
+                await RegisterIPFailedLogin(HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown", request.Email, user);
                 return Unauthorized(new { Message = "Invalid email or password." });
             }
             catch (FormatException)
             {
-                RegisterFailedLogin(user);
-                await _context.SaveChangesAsync();
+                await RegisterIPFailedLogin(HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown", request.Email, user);
                 return Unauthorized(new { Message = "Invalid email or password." });
             }
 
             if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             {
-                RegisterFailedLogin(user);
-                await _context.SaveChangesAsync();
+                await RegisterIPFailedLogin(HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown", request.Email, user);
                 return Unauthorized(new { Message = "Invalid email or password." });
             }
 
             RegisterSuccessfulLogin(user);
+            await LogAuditAsync(user.Id, user.Email, "Login Success (Challenge)");
             await _context.SaveChangesAsync();
 
             return await CreateLoginSuccessResponseAsync(user);
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshTokens([FromBody] RefreshRequest request)
+        {
+            var rToken = string.IsNullOrEmpty(request.RefreshToken) 
+                ? Request.Cookies["refresh_token"] 
+                : request.RefreshToken;
+
+            var user = await _context.UserAccounts
+                .Include(u => u.Employee)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                        .ThenInclude(r => r.RolePermissions)
+                            .ThenInclude(rp => rp.Permission)
+                .FirstOrDefaultAsync(u => u.RefreshToken == rToken);
+
+            if (user == null || user.RefreshTokenExpiryTime <= DateTimeOffset.UtcNow || !user.IsActive)
+            {
+                // If security stamp changed since token generation, we could optionally revoke here.
+                return Unauthorized(new { Message = "Invalid or expired refresh token." });
+            }
+
+            var activeDelegations = await _context.RoleDelegations
+                .Include(rd => rd.UserRole)
+                    .ThenInclude(ur => ur.Role)
+                        .ThenInclude(r => r.RolePermissions)
+                            .ThenInclude(rp => rp.Permission)
+                .Where(rd => rd.SubstituteUserId == user.Id &&
+                             rd.IsActive &&
+                             rd.StartDate <= DateTimeOffset.UtcNow &&
+                             rd.EndDate >= DateTimeOffset.UtcNow)
+                .ToListAsync();
+
+            var token = GenerateJwt(user, activeDelegations);
+            var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTimeOffset.UtcNow.AddDays(_config.GetValue<int>("Security:RefreshTokenExpirationDays", 7));
+            
+            await LogAuditAsync(user.Id, user.Email, "Refresh Token Issued");
+            await _context.SaveChangesAsync();
+
+            var legacyRole = user.UserRoles.Any(ur => ur.Role.Name == "Admin") ? "Admin" : "Staff";
+
+            var expireMins = _config.GetValue<int>("Security:AccessTokenExpirationMinutes", 15);
+            Response.Cookies.Append("auth_token", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // Force HTTPS
+                SameSite = SameSiteMode.Lax, // Allow SSO bridging across Subdomains in Chrome
+                Expires = DateTimeOffset.UtcNow.AddMinutes(expireMins)
+            });
+
+            var refreshPeriodDays = _config.GetValue<int>("Security:RefreshTokenExpirationDays", 7);
+            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(refreshPeriodDays)
+            });
+
+            return Ok(new { Token = token, RefreshToken = refreshToken, Role = legacyRole });
+        }
+
+        private async Task LogAuditAsync(int? userId, string email, string action)
+        {
+            var log = new AuditLog
+            {
+                UserId = userId,
+                Email = email,
+                IPAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
+                Action = action,
+                UserAgent = Request.Headers["User-Agent"].ToString()
+            };
+            _context.AuditLogs.Add(log);
         }
 
         private static string NormalizeEmail(string email)
@@ -189,13 +280,37 @@ namespace IntranetPortal.Api.Controllers
             return new UnauthorizedObjectResult(new { Message = "Account is temporarily locked. Please try again later." });
         }
 
-        private static void RegisterFailedLogin(UserAccount user)
+        private async Task RegisterIPFailedLogin(string ipAddress, string email, UserAccount? user)
         {
-            user.FailedLoginAttempts++;
-            if (user.FailedLoginAttempts >= 10)
+            var attemptKey = $"attempts_{ipAddress}_{email}";
+            var attempts = _cache.GetOrCreate(attemptKey, entry =>
             {
-                user.LockedUntil = DateTimeOffset.UtcNow.AddMinutes(15);
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
+                return 0;
+            }) + 1;
+            
+            _cache.Set(attemptKey, attempts, TimeSpan.FromMinutes(30));
+
+            if (user != null)
+            {
+                user.FailedLoginAttempts++;
             }
+
+            await LogAuditAsync(user?.Id, email, "Login Failed");
+
+            var lockoutMins = _config.GetValue<int>("Security:LockoutDurationMinutes", 30);
+            if (attempts >= 10 || (user != null && user.FailedLoginAttempts >= 10))
+            {
+                var lockoutKey = $"lockout_{ipAddress}_{email}";
+                _cache.Set(lockoutKey, true, TimeSpan.FromMinutes(lockoutMins));
+                
+                if (user != null)
+                {
+                    user.LockedUntil = DateTimeOffset.UtcNow.AddMinutes(lockoutMins);
+                }
+                await LogAuditAsync(user?.Id, email, "IP+Account Locked");
+            }
+            await _context.SaveChangesAsync();
         }
 
         private static void RegisterSuccessfulLogin(UserAccount user)
@@ -219,21 +334,42 @@ namespace IntranetPortal.Api.Controllers
 
             var token = GenerateJwt(user, activeDelegations);
 
-            // Temporary backward compatibility for the Next.js UI Role string
+            var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            var refreshPeriodDays = _config.GetValue<int>("Security:RefreshTokenExpirationDays", 7);
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTimeOffset.UtcNow.AddDays(refreshPeriodDays);
+            
+            await _context.SaveChangesAsync();
+
             var legacyRole = user.UserRoles.Any(ur => ur.Role.Name == "Admin") ? "Admin" : "Staff";
-            return Ok(new { Token = token, Role = legacyRole });
+
+            var expireMins = _config.GetValue<int>("Security:AccessTokenExpirationMinutes", 15);
+            Response.Cookies.Append("auth_token", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // Force HTTPS
+                SameSite = SameSiteMode.Lax, // Allow SSO bridging across Subdomains in Chrome
+                Expires = DateTimeOffset.UtcNow.AddMinutes(expireMins)
+            });
+            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(refreshPeriodDays)
+            });
+
+            return Ok(new { Token = token, RefreshToken = refreshToken, Role = legacyRole });
         }
 
         [HttpPost("seed-test-admin")]
         public async Task<IActionResult> SeedTestAdmin()
         {
-            // CRITICAL SECURITY PRECAUTION: Completely lock down reseeding if the Server is running in Production
             if (!_env.IsDevelopment())
             {
                 return NotFound(new { Message = "Testing and Seeding endpoints are completely disabled outside of the Local Development environment." });
             }
 
-            // Scrub exactly every legacy duplicate that could have accidentally spun up!
             var existingUsers = await _context.UserAccounts.Where(u => u.Email == "admin@company.com").ToListAsync();
             if (existingUsers.Any())
             {
@@ -245,18 +381,12 @@ namespace IntranetPortal.Api.Controllers
             if (adminRole == null) 
             {
                 adminRole = new IntranetPortal.Data.Models.Role { Name = "Admin", Description = "Global Application Administrator" };
-                
-                // Seed a foundational Permission object to populate the Advanced RBAC Matrix
                 var superAdminPerm = new IntranetPortal.Data.Models.Permission { Name = "System.FullAccess", Description = "God-mode capability" };
                 _context.Permissions.Add(superAdminPerm);
-
-                // Map the Permission tightly to the Role using the Many-to-Many entity wrapper
                 adminRole.RolePermissions.Add(new IntranetPortal.Data.Models.RolePermission { Role = adminRole, Permission = superAdminPerm });
-                
                 _context.Roles.Add(adminRole);
             }
 
-            // Create a dummy environment framework to mount the Employee
             var testSite = await _context.Sites.FirstOrDefaultAsync(s => s.Name == "Global HQ");
             if (testSite == null)
             {
@@ -290,7 +420,7 @@ namespace IntranetPortal.Api.Controllers
                 Employee = adminEmployee,
                 UserRoles = new List<IntranetPortal.Data.Models.UserRole>
                 {
-                    new IntranetPortal.Data.Models.UserRole { Role = adminRole, SiteId = null } // SiteId null = Global Scope!
+                    new IntranetPortal.Data.Models.UserRole { Role = adminRole, SiteId = null }
                 }
             };
 
@@ -323,13 +453,11 @@ namespace IntranetPortal.Api.Controllers
                 allUserRoles.AddRange(delegations.Select(d => d.UserRole).Where(ur => ur != null));
             }
 
-            // Inject backwards compatibility Admin boolean for immediate frontend support
             if (allUserRoles.Any(ur => ur.Role?.Name == "Admin"))
             {
                 claims.Add(new Claim(ClaimTypes.Role, "Admin"));
             }
 
-            // Inject the precise granular Scoped Permissions explicitly mapping capabilities to strict organizational boundaries!
             var rolePerms = allUserRoles
                 .Where(ur => ur.Role != null && ur.Role.RolePermissions != null)
                 .SelectMany(ur => ur.Role.RolePermissions.Where(rp => rp.Permission != null).Select(rp => new 
@@ -339,7 +467,6 @@ namespace IntranetPortal.Api.Controllers
                     ur.DepartmentId
                 })).ToList();
 
-            // Distinct ScopedPerm (Functional) constraints
             var scopedClaims = rolePerms.Where(x => !x.DepartmentId.HasValue)
                 .Select(x => $"{x.PermName}:" + (x.SiteId.HasValue ? x.SiteId.Value.ToString() : "Global")).Distinct();
             foreach (var sp in scopedClaims)
@@ -347,7 +474,6 @@ namespace IntranetPortal.Api.Controllers
                 claims.Add(new Claim("ScopedPerm", sp));
             }
 
-            // Distinct DeptPerm (Hierarchical) constraints
             var deptClaims = rolePerms.Where(x => x.DepartmentId.HasValue)
                 .Select(x => $"{x.PermName}:{x.DepartmentId!.Value}").Distinct();
             foreach (var dp in deptClaims)
@@ -355,17 +481,17 @@ namespace IntranetPortal.Api.Controllers
                 claims.Add(new Claim("DeptPerm", dp));
             }
 
-            // Retain the generic un-scoped 'Permission' list strictly allowing [Authorize(Policy="...")] attributes to function natively
             foreach (var p in rolePerms.Select(x => x.PermName).Distinct())
             {
                 claims.Add(new Claim("Permission", p));
             }
 
+            var expireMins = _config.GetValue<int>("Security:AccessTokenExpirationMinutes", 15);
             var token = new JwtSecurityToken(
                 issuer: jwtSettings["Issuer"],
                 audience: jwtSettings["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(8),
+                expires: DateTime.UtcNow.AddMinutes(expireMins),
                 signingCredentials: creds
             );
 
@@ -398,5 +524,10 @@ namespace IntranetPortal.Api.Controllers
         public required string Email { get; set; }
         public required string ChallengeId { get; set; }
         public required string EncryptedPassword { get; set; }
+    }
+
+    public class RefreshRequest
+    {
+        public string? RefreshToken { get; set; }
     }
 }

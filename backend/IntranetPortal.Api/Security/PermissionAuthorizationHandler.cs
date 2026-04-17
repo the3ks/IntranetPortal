@@ -37,22 +37,9 @@ namespace IntranetPortal.Api.Security
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
                 return;
 
-            // Resolve DbContext dynamically using a local scope natively protecting the Engine loop
+            // Strict dependency scoping - dynamically resolved via local scope
             using var scope = _serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-            // Validate SecurityStamp and IsActive before doing any permission checks
-            var stampString = context.User.Claims.FirstOrDefault(c => c.Type == "SecurityStamp")?.Value;
-            if (!int.TryParse(stampString, out int tokenStamp))
-                return;
-
-            var account = await dbContext.UserAccounts
-                .Where(u => u.Id == userId)
-                .Select(u => new { u.IsActive, u.SecurityStamp })
-                .FirstOrDefaultAsync();
-
-            if (account == null || !account.IsActive || account.SecurityStamp != tokenStamp)
-                return;
 
             // Super Admin Bypass Guard
             var isMachineAdmin = await dbContext.UserAccounts

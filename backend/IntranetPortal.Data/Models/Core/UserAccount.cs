@@ -18,6 +18,10 @@ namespace IntranetPortal.Data.Models
         public int FailedLoginAttempts { get; set; } = 0;
         public DateTimeOffset? LockedUntil { get; set; }
 
+        // Security: Refresh Tokens
+        public string? RefreshToken { get; set; }
+        public DateTimeOffset? RefreshTokenExpiryTime { get; set; }
+
         // Foreign Key to the Employee record
         public int? EmployeeId { get; set; }
         public Employee? Employee { get; set; }
