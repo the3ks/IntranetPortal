@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Caching.Memory;
 using IntranetPortal.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -92,6 +93,58 @@ builder.Services.AddAuthentication(options =>
                 context.Token = context.Request.Cookies["auth_token"];
             }
             return Task.CompletedTask;
+        },
+        OnTokenValidated = async context =>
+        {
+            var config = context.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+            if (config.GetValue<bool>("Security:RequireStatefulTokenValidation", true))
+            {
+                var principal = context.Principal;
+                if (principal == null) return;
+                
+                var subClaim = principal.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(subClaim) || !int.TryParse(subClaim, out int userId)) return;
+                
+                var memoryCache = context.HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>();
+                var cacheKey = $"UserState_{userId}";
+                
+                var cachedObj = memoryCache.Get(cacheKey);
+                IntranetPortal.Data.Models.UserAccount? cachedUser = cachedObj as IntranetPortal.Data.Models.UserAccount;
+                
+                if (cachedUser == null)
+                {
+                    var dbContext = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                    cachedUser = await dbContext.UserAccounts.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+                    if (cachedUser != null)
+                    {
+                        memoryCache.Set(cacheKey, cachedUser, TimeSpan.FromMinutes(2));
+                    }
+                }
+                
+                if (cachedUser == null || !cachedUser.IsActive)
+                {
+                    context.Fail("TOKEN_INVALID");
+                    return;
+                }
+                
+                if (cachedUser.LockedUntil.HasValue && cachedUser.LockedUntil > DateTimeOffset.UtcNow)
+                {
+                    context.Response.Headers.Append("WWW-Authenticate", "Bearer error=\"invalid_token\", error_description=\"LOCKED_OUT\"");
+                    context.Fail("LOCKED_OUT");
+                    return;
+                }
+                
+                var tokenStampStr = principal.FindFirst("SecurityStamp")?.Value;
+                if (!string.IsNullOrEmpty(tokenStampStr) && int.TryParse(tokenStampStr, out int tokenStamp))
+                {
+                    if (cachedUser.SecurityStamp != tokenStamp)
+                    {
+                        context.Response.Headers.Append("WWW-Authenticate", "Bearer error=\"invalid_token\", error_description=\"STAMP_INVALID\"");
+                        context.Fail("STAMP_INVALID");
+                        return;
+                    }
+                }
+            }
         }
     };
 });

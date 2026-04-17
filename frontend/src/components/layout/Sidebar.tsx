@@ -16,7 +16,10 @@ export default function Sidebar({ user }: { user?: any }) {
   useEffect(() => {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5254";
     fetch(`${backendUrl}/api/modules`, { credentials: 'include' })
-      .then(r => r.ok ? r.json() : [])
+      .then(r => {
+        if (r.status === 401 && (r.headers.get("WWW-Authenticate") || "").includes("LOCKED_OUT")) window.location.href = "/login?reason=locked";
+        return r.ok ? r.json() : [];
+      })
       .then(data => {
         // Filter out the Monolith's standard static hardcoded directories
         const filtered = data.filter((m: any) => !["The Hub", "Assets Management", "Administration"].includes(m.name));
@@ -25,12 +28,18 @@ export default function Sidebar({ user }: { user?: any }) {
       .catch(() => { });
 
     fetch(`${backendUrl}/api/assetrequests/is-manager`, { credentials: 'include' })
-      .then(r => r.ok ? r.json() : false)
+      .then(r => {
+        if (r.status === 401 && (r.headers.get("WWW-Authenticate") || "").includes("LOCKED_OUT")) window.location.href = "/login?reason=locked";
+        return r.ok ? r.json() : false;
+      })
       .then(data => setIsCategoryManager(data))
       .catch(() => { });
 
     fetch(`${backendUrl}/api/assetrequests/is-approver`, { credentials: 'include' })
-      .then(r => r.ok ? r.json() : false)
+      .then(r => {
+        if (r.status === 401 && (r.headers.get("WWW-Authenticate") || "").includes("LOCKED_OUT")) window.location.href = "/login?reason=locked";
+        return r.ok ? r.json() : false;
+      })
       .then(data => setIsApprover(data))
       .catch(() => { });
   }, []);
@@ -167,6 +176,14 @@ export default function Sidebar({ user }: { user?: any }) {
           {activeModule === "admin" && isAdmin && (
             <>
               <div className="pt-2 pb-2">
+                <p className="px-4 text-[11px] font-bold text-emerald-400 uppercase tracking-widest opacity-80">System Monitoring</p>
+              </div>
+              <Link href="/admin/audit-logs" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${isLinkActive('/admin/audit-logs') ? 'bg-gray-800 text-white shadow-sm' : ''}`}>
+                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                <span>Login Monitoring</span>
+              </Link>
+
+              <div className="pt-6 pb-2">
                 <p className="px-4 text-[11px] font-bold text-rose-400 uppercase tracking-widest opacity-80">Administration</p>
               </div>
               <Link href="/admin/quick-setup" className={`hover:bg-gray-800 hover:text-white px-4 py-3 rounded-xl transition-all font-medium flex items-center space-x-3 ${isLinkActive('/admin/quick-setup') ? 'bg-gray-800 text-white shadow-sm' : ''}`}>

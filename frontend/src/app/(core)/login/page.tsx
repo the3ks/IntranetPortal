@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { loginWithChallenge } from "@/lib/authChallenge";
 import { siteConfig } from "@/config/site";
@@ -11,6 +11,16 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [lockedMessage, setLockedMessage] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const search = new URLSearchParams(window.location.search);
+      if (search.get("reason") === "locked") {
+        setLockedMessage("Your account has been securely locked due to too many failed login attempts.");
+      }
+    }
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,6 +78,16 @@ export default function LoginPage() {
                 <div className="flex">
                   <div className="ml-3">
                     <p className="text-sm text-red-700 font-medium">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {lockedMessage && (
+              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 p-4 rounded-xl">
+                <div className="flex">
+                  <div className="mx-auto text-center">
+                    <p className="text-sm text-red-700 dark:text-red-400 font-extrabold uppercase tracking-wide">{lockedMessage}</p>
                   </div>
                 </div>
               </div>

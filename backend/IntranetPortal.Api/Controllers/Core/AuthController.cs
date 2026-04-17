@@ -171,69 +171,6 @@ namespace IntranetPortal.Api.Controllers
             return await CreateLoginSuccessResponseAsync(user);
         }
 
-        [HttpPost("refresh")]
-        public async Task<IActionResult> RefreshTokens([FromBody] RefreshRequest request)
-        {
-            var rToken = string.IsNullOrEmpty(request.RefreshToken) 
-                ? Request.Cookies["refresh_token"] 
-                : request.RefreshToken;
-
-            var user = await _context.UserAccounts
-                .Include(u => u.Employee)
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                        .ThenInclude(r => r.RolePermissions)
-                            .ThenInclude(rp => rp.Permission)
-                .FirstOrDefaultAsync(u => u.RefreshToken == rToken);
-
-            if (user == null || user.RefreshTokenExpiryTime <= DateTimeOffset.UtcNow || !user.IsActive)
-            {
-                // If security stamp changed since token generation, we could optionally revoke here.
-                return Unauthorized(new { Message = "Invalid or expired refresh token." });
-            }
-
-            var activeDelegations = await _context.RoleDelegations
-                .Include(rd => rd.UserRole)
-                    .ThenInclude(ur => ur.Role)
-                        .ThenInclude(r => r.RolePermissions)
-                            .ThenInclude(rp => rp.Permission)
-                .Where(rd => rd.SubstituteUserId == user.Id &&
-                             rd.IsActive &&
-                             rd.StartDate <= DateTimeOffset.UtcNow &&
-                             rd.EndDate >= DateTimeOffset.UtcNow)
-                .ToListAsync();
-
-            var token = GenerateJwt(user, activeDelegations);
-            var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTimeOffset.UtcNow.AddDays(_config.GetValue<int>("Security:RefreshTokenExpirationDays", 7));
-            
-            await LogAuditAsync(user.Id, user.Email, "Refresh Token Issued");
-            await _context.SaveChangesAsync();
-
-            var legacyRole = user.UserRoles.Any(ur => ur.Role.Name == "Admin") ? "Admin" : "Staff";
-
-            var expireMins = _config.GetValue<int>("Security:AccessTokenExpirationMinutes", 15);
-            Response.Cookies.Append("auth_token", token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, // Force HTTPS
-                SameSite = SameSiteMode.Lax, // Allow SSO bridging across Subdomains in Chrome
-                Expires = DateTimeOffset.UtcNow.AddMinutes(expireMins)
-            });
-
-            var refreshPeriodDays = _config.GetValue<int>("Security:RefreshTokenExpirationDays", 7);
-            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax,
-                Expires = DateTimeOffset.UtcNow.AddDays(refreshPeriodDays)
-            });
-
-            return Ok(new { Token = token, RefreshToken = refreshToken, Role = legacyRole });
-        }
 
         private async Task LogAuditAsync(int? userId, string email, string action)
         {
@@ -307,6 +244,7 @@ namespace IntranetPortal.Api.Controllers
                 if (user != null)
                 {
                     user.LockedUntil = DateTimeOffset.UtcNow.AddMinutes(lockoutMins);
+                    _cache.Remove($"UserState_{user.Id}");
                 }
                 await LogAuditAsync(user?.Id, email, "IP+Account Locked");
             }
@@ -334,32 +272,23 @@ namespace IntranetPortal.Api.Controllers
 
             var token = GenerateJwt(user, activeDelegations);
 
-            var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            var refreshPeriodDays = _config.GetValue<int>("Security:RefreshTokenExpirationDays", 7);
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTimeOffset.UtcNow.AddDays(refreshPeriodDays);
-            
             await _context.SaveChangesAsync();
 
             var legacyRole = user.UserRoles.Any(ur => ur.Role.Name == "Admin") ? "Admin" : "Staff";
 
-            var expireMins = _config.GetValue<int>("Security:AccessTokenExpirationMinutes", 15);
+            var expireDays = _config.GetValue<int>("Security:AccessTokenExpirationDays", 7);
             Response.Cookies.Append("auth_token", token, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true, // Force HTTPS
                 SameSite = SameSiteMode.Lax, // Allow SSO bridging across Subdomains in Chrome
-                Expires = DateTimeOffset.UtcNow.AddMinutes(expireMins)
+                Expires = DateTimeOffset.UtcNow.AddDays(expireDays)
             });
-            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax,
-                Expires = DateTimeOffset.UtcNow.AddDays(refreshPeriodDays)
-            });
+            
+            // Delete obsolete refresh_token cookie on browser if it exists
+            Response.Cookies.Append("refresh_token", "", new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(-1) });
 
-            return Ok(new { Token = token, RefreshToken = refreshToken, Role = legacyRole });
+            return Ok(new { Token = token, Role = legacyRole });
         }
 
         [HttpPost("seed-test-admin")]
@@ -486,12 +415,12 @@ namespace IntranetPortal.Api.Controllers
                 claims.Add(new Claim("Permission", p));
             }
 
-            var expireMins = _config.GetValue<int>("Security:AccessTokenExpirationMinutes", 15);
+            var expireDays = _config.GetValue<int>("Security:AccessTokenExpirationDays", 7);
             var token = new JwtSecurityToken(
                 issuer: jwtSettings["Issuer"],
                 audience: jwtSettings["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(expireMins),
+                expires: DateTime.UtcNow.AddDays(expireDays),
                 signingCredentials: creds
             );
 
@@ -526,8 +455,5 @@ namespace IntranetPortal.Api.Controllers
         public required string EncryptedPassword { get; set; }
     }
 
-    public class RefreshRequest
-    {
-        public string? RefreshToken { get; set; }
-    }
+
 }

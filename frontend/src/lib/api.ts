@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5254";
 
@@ -11,11 +12,11 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
   const token = cookieStore.get("auth_token")?.value;
 
   const headers = new Headers(options.headers);
-  
+
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  
+
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   if (!headers.has("Content-Type") && !isFormData) {
     headers.set("Content-Type", "application/json");
@@ -28,6 +29,13 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     ...options,
     headers,
   });
+
+  if (res.status === 401) {
+    const authHeader = res.headers.get("WWW-Authenticate") || "";
+    if (authHeader.includes("LOCKED_OUT")) {
+      redirect("/login?reason=locked");
+    }
+  }
 
   return res;
 }
