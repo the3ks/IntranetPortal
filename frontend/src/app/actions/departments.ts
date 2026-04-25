@@ -9,16 +9,15 @@ export async function createDepartmentAction(formData: FormData) {
     siteId: siteIdRaw ? parseInt(siteIdRaw as string) : null
   };
 
-  const res = await fetchWithAuth("/api/departments", {
+  const res = await fetchWithAuth("/api/hr/departments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
 
   if (res.ok) {
-    revalidatePath("/departments");
-    revalidatePath("/employees/new");
-    revalidatePath("/employees/[id]/edit");
+    revalidatePath("/hr/departments");
+    revalidatePath("/hr/employee-records");
   } else {
     throw new Error("Failed to create department");
   }
@@ -32,25 +31,25 @@ export async function updateDepartmentAction(formData: FormData) {
     siteId: siteIdRaw ? parseInt(siteIdRaw as string) : null
   };
 
-  const res = await fetchWithAuth(`/api/departments/${id}`, {
+  const res = await fetchWithAuth(`/api/hr/departments/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
 
   if (res.ok) {
-    revalidatePath("/departments");
-    revalidatePath("/employees");
+    revalidatePath("/hr/departments");
+    revalidatePath("/hr/employee-records");
   } else {
     throw new Error("Failed to update department");
   }
 }
 
 export async function deleteDepartmentAction(id: number) {
-  const res = await fetchWithAuth(`/api/departments/${id}`, { method: "DELETE" });
+  const res = await fetchWithAuth(`/api/hr/departments/${id}`, { method: "DELETE" });
   if (res.ok) {
-    revalidatePath("/departments");
-    revalidatePath("/employees");
+    revalidatePath("/hr/departments");
+    revalidatePath("/hr/employee-records");
   } else {
     throw new Error("Failed to delete department");
   }

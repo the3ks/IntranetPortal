@@ -1,14 +1,14 @@
-using IntranetPortal.Data.Models;
+using IntranetPortal.Data.Models.HR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace IntranetPortal.Data.Data.Configurations.Core
+namespace IntranetPortal.Data.Data.Configurations.HR
 {
     public class PositionConfiguration : IEntityTypeConfiguration<Position>
     {
         public void Configure(EntityTypeBuilder<Position> builder)
         {
-            builder.ToTable("Core_Positions");
+            builder.ToTable("HR_Positions");
 
         }
     }

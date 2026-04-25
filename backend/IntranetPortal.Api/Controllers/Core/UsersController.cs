@@ -59,7 +59,7 @@ namespace IntranetPortal.Api.Controllers
                     u.Id,
                     u.Email,
                     u.IsActive,
-                    EmployeeId = u.EmployeeId,
+                    EmployeeId = u.Employee != null ? (int?)u.Employee.Id : null,
                     EmployeeName = u.Employee != null ? u.Employee.FullName : "System Account",
                     Roles = u.UserRoles.Select(ur => new 
                     {

@@ -9,17 +9,17 @@ export default function AdminModulesClient({ initialModules, sites }: { initialM
   const [showModal, setShowModal] = useState(false);
   const [editMod, setEditMod] = useState<any>(null); // null = create new
 
-  const [formData, setFormData] = useState({ name: "", description: "", url: "", iconSvg: "", isActiveGlobally: true });
+  const [formData, setFormData] = useState({ name: "", description: "", url: "", iconSvg: "", isActiveGlobally: true, order: 0 });
 
   const openAdd = () => {
     setEditMod(null);
-    setFormData({ name: "", description: "", url: "", iconSvg: "", isActiveGlobally: true });
+    setFormData({ name: "", description: "", url: "", iconSvg: "", isActiveGlobally: true, order: 0 });
     setShowModal(true);
   };
 
   const openEdit = (mod: any) => {
     setEditMod(mod);
-    setFormData({ name: mod.name, description: mod.description, url: mod.url, iconSvg: mod.iconSvg, isActiveGlobally: mod.isActiveGlobally });
+    setFormData({ name: mod.name, description: mod.description, url: mod.url, iconSvg: mod.iconSvg, isActiveGlobally: mod.isActiveGlobally, order: mod.order || 0 });
     setShowModal(true);
   };
 
@@ -40,9 +40,9 @@ export default function AdminModulesClient({ initialModules, sites }: { initialM
     if (res.ok) {
       const saved = await res.json();
       if (isNew) {
-        setModules([...modules, saved]);
+        setModules([...modules, saved].sort((a: any, b: any) => (a.order || 0) - (b.order || 0)));
       } else {
-        setModules(modules.map((m: any) => m.id === saved.id ? saved : m));
+        setModules(modules.map((m: any) => m.id === saved.id ? saved : m).sort((a: any, b: any) => (a.order || 0) - (b.order || 0)));
       }
       setShowModal(false);
     }
@@ -130,21 +130,21 @@ export default function AdminModulesClient({ initialModules, sites }: { initialM
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h3 className="text-xl font-bold text-foreground inline-flex items-center gap-2">
-                       {mod.name} 
-                       {isCore && <span className="bg-fuchsia-500/20 text-fuchsia-500 text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full">Core</span>}
+                       {mod.name} <span className="text-sm font-normal text-foreground/40 ml-2">(Order: {mod.order})</span>
+                       {isCore && <span className="bg-fuchsia-500/20 text-fuchsia-500 text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full ml-2">Core</span>}
                     </h3>
                     <div className="text-sm font-medium text-foreground/50">{mod.url}</div>
                   </div>
-                  {!isCore && (
-                    <div className="flex gap-2">
-                      <button onClick={() => openEdit(mod)} className="p-2 text-foreground/50 hover:text-blue-500 transition-colors">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                      </button>
+                  <div className="flex gap-2">
+                    <button onClick={() => openEdit(mod)} className="p-2 text-foreground/50 hover:text-blue-500 transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    </button>
+                    {!isCore && (
                       <button onClick={() => deleteModule(mod.id)} className="p-2 text-foreground/50 hover:text-red-500 transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
                 <p className="text-foreground/70 mb-6">{mod.description}</p>
                 
@@ -198,24 +198,33 @@ export default function AdminModulesClient({ initialModules, sites }: { initialM
              </button>
              <h2 className="text-2xl font-bold mb-6">{editMod ? "Edit Module" : "Create New Module"}</h2>
              
-             <div className="space-y-4">
+              {(() => {
+                 const isEditingCore = editMod && (editMod.name === "The Hub" || editMod.name === "Administration");
+                 return (
+                   <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-bold text-foreground/70 mb-1">Module Name</label>
+                        <input type="text" disabled={isEditingCore} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className={`w-full bg-background border border-border/50 p-3 rounded-xl focus:outline-none focus:border-blue-500 ${isEditingCore ? "opacity-50 cursor-not-allowed" : ""}`} />
+                      </div>
                 <div>
-                  <label className="block text-sm font-bold text-foreground/70 mb-1">Module Name</label>
-                  <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-background border border-border/50 p-3 rounded-xl focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm font-bold text-foreground/70 mb-1">Display Order</label>
+                  <input type="number" value={formData.order} onChange={e => setFormData({...formData, order: parseInt(e.target.value) || 0})} className="w-full bg-background border border-border/50 p-3 rounded-xl focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-foreground/70 mb-1">Module Description</label>
                   <input type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-background border border-border/50 p-3 rounded-xl focus:outline-none focus:border-blue-500" />
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-foreground/70 mb-1">Target URL</label>
-                  <input type="text" value={formData.url} onChange={e => setFormData({...formData, url: e.target.value})} placeholder="e.g. /drinks or http://localhost:3001" className="w-full bg-background border border-border/50 p-3 rounded-xl focus:outline-none focus:border-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-foreground/70 mb-1">SVG Icon (Raw string)</label>
-                  <textarea value={formData.iconSvg} onChange={e => setFormData({...formData, iconSvg: e.target.value})} className="w-full bg-background border border-border/50 p-3 rounded-xl focus:outline-none focus:border-blue-500 h-24 font-mono text-xs"></textarea>
-                </div>
-             </div>
+                      <div>
+                        <label className="block text-sm font-bold text-foreground/70 mb-1">Target URL</label>
+                        <input type="text" disabled={isEditingCore} value={formData.url} onChange={e => setFormData({...formData, url: e.target.value})} placeholder="e.g. /drinks or http://localhost:3001" className={`w-full bg-background border border-border/50 p-3 rounded-xl focus:outline-none focus:border-blue-500 ${isEditingCore ? "opacity-50 cursor-not-allowed" : ""}`} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-foreground/70 mb-1">SVG Icon (Raw string)</label>
+                        <textarea value={formData.iconSvg} onChange={e => setFormData({...formData, iconSvg: e.target.value})} className="w-full bg-background border border-border/50 p-3 rounded-xl focus:outline-none focus:border-blue-500 h-24 font-mono text-xs"></textarea>
+                      </div>
+                   </div>
+                 );
+              })()}
              
              <div className="mt-8 flex justify-end gap-3">
                 <button onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-xl text-foreground/60 font-bold hover:bg-background transition-colors">Cancel</button>

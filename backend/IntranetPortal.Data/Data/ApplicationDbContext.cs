@@ -7,10 +7,13 @@ namespace IntranetPortal.Data.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
+        // Unified Personnel & Organization (Owned by HR)
         public DbSet<Employee> Employees { get; set; }
-        public DbSet<Position> Positions { get; set; }
         public DbSet<Department> Departments { get; set; }
+        public DbSet<Position> Positions { get; set; }
         public DbSet<Team> Teams { get; set; }
+
+        // Core Modules
         public DbSet<Announcement> Announcements { get; set; }
         public DbSet<Site> Sites { get; set; }
         public DbSet<SystemModule> SystemModules { get; set; }
@@ -18,14 +21,22 @@ namespace IntranetPortal.Data.Data
         public DbSet<LoginChallenge> LoginChallenges { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
 
-        // Advanced Scalable Permission Matrix
+        // HR Specific Extensions
+        public DbSet<IntranetPortal.Data.Models.HR.LeaveType> HR_LeaveTypes { get; set; }
+        public DbSet<IntranetPortal.Data.Models.HR.LeaveRequest> HR_LeaveRequests { get; set; }
+        public DbSet<IntranetPortal.Data.Models.HR.OnboardingTemplate> HR_OnboardingTemplates { get; set; }
+        public DbSet<IntranetPortal.Data.Models.HR.OnboardingTask> HR_OnboardingTasks { get; set; }
+        public DbSet<IntranetPortal.Data.Models.HR.EmployeeOnboardingTask> HR_EmployeeOnboardingTasks { get; set; }
+        public DbSet<IntranetPortal.Data.Models.HR.AttendanceLog> HR_AttendanceLogs { get; set; }
+
+        // Security Matrix
         public DbSet<Role> Roles { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<RoleDelegation> RoleDelegations { get; set; }
 
-        // Assets Management Module
+        // Assets Management
         public DbSet<IntranetPortal.Data.Models.Assets.AssetCategory> AssetCategories { get; set; }
         public DbSet<IntranetPortal.Data.Models.Assets.AssetModel> AssetModels { get; set; }
         public DbSet<IntranetPortal.Data.Models.Assets.Asset> Assets { get; set; }
@@ -45,7 +56,12 @@ namespace IntranetPortal.Data.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Automatically apply all entity type configurations (e.g., from Configurations/Core folder)
+            // Rule 1: HR Ownership Mapping
+            modelBuilder.Entity<Employee>().ToTable("HR_Employees");
+            modelBuilder.Entity<Department>().ToTable("HR_Departments");
+            modelBuilder.Entity<Position>().ToTable("HR_Positions");
+
+            // Apply specific configurations
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
     }

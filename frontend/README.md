@@ -7,6 +7,9 @@ This is the Next.js React user interface for the Enterprise Intranet Portal. It 
 - **Enterprise Personnel Module**: Full CRUD operations for Employee management safely masking protected fields behind specific Database scopes.
 - **Infrastructure Setup Matrix**: Raw text-area massive ingestion system capable of defining Sites, Departments, and Roles on a pristine deployment.
 - **Internal Knowledge Base (Wiki)**: Seamless `.md` Markdown parser rendering localized architectural documentation directly into the dashboard securely.
+- **Administrator Login Monitoring & Security**: Stateless authentication via refresh tokens, Next.js middleware-based silent token refresh, and a dedicated audit log interface with IP-based account lockout tracking.
+- **Asset Management Hub**: Hierarchical categorization of assets with granular, category-level visibility configurations and management boundaries.
+
 
 ---
 

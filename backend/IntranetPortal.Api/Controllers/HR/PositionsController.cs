@@ -2,13 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IntranetPortal.Data.Data;
-using IntranetPortal.Data.Models;
+using IntranetPortal.Data.Models.HR;
 
-namespace IntranetPortal.Api.Controllers
+namespace IntranetPortal.Api.Controllers.HR
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/hr/[controller]")]
     public class PositionsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -22,7 +22,12 @@ namespace IntranetPortal.Api.Controllers
         public async Task<IActionResult> GetPositions()
         {
             var positions = await _context.Positions
-                .Select(p => new { p.Id, p.Name, p.Description })
+                .Select(p => new PositionDto 
+                { 
+                    Id = p.Id, 
+                    Name = p.Name, 
+                    Description = p.Description 
+                })
                 .OrderBy(p => p.Name)
                 .ToListAsync();
 
@@ -30,7 +35,7 @@ namespace IntranetPortal.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreatePosition([FromBody] PositionDto dto)
+        public async Task<IActionResult> CreatePosition([FromBody] PositionUpsertDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -38,7 +43,12 @@ namespace IntranetPortal.Api.Controllers
             _context.Positions.Add(position);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetPositions), new { id = position.Id }, position);
+            return CreatedAtAction(nameof(GetPositions), new { id = position.Id }, new PositionDto 
+            { 
+                Id = position.Id, 
+                Name = position.Name, 
+                Description = position.Description 
+            });
         }
 
         [HttpDelete("{id}")]
@@ -61,6 +71,13 @@ namespace IntranetPortal.Api.Controllers
     }
 
     public class PositionDto
+    {
+        public int Id { get; set; }
+        public required string Name { get; set; }
+        public string? Description { get; set; }
+    }
+
+    public class PositionUpsertDto
     {
         public required string Name { get; set; }
         public string? Description { get; set; }

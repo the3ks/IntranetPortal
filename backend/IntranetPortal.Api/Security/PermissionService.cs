@@ -27,7 +27,7 @@ namespace IntranetPortal.Api.Security
             if (user == null) return false;
 
             // System Admin override natively protects core machine owners
-            if (user.HasClaim("Permission", "System.FullAccess")) return true;
+            if (user.IsInRole("Admin") || user.HasClaim("Permission", "System.FullAccess")) return true;
 
             // Check if they possess Global access spanning all instances
             if (user.HasClaim("ScopedPerm", $"{permission}:Global")) return true;
@@ -41,7 +41,7 @@ namespace IntranetPortal.Api.Security
             var user = _httpContextAccessor.HttpContext?.User;
             if (user == null) return false;
 
-            if (user.HasClaim("Permission", "System.FullAccess")) return true;
+            if (user.IsInRole("Admin") || user.HasClaim("Permission", "System.FullAccess")) return true;
             return user.HasClaim("ScopedPerm", $"{permission}:Global");
         }
 
@@ -69,7 +69,7 @@ namespace IntranetPortal.Api.Security
             var user = _httpContextAccessor.HttpContext?.User;
             if (user == null) return false;
 
-            if (user.HasClaim("Permission", "System.FullAccess")) return true;
+            if (user.IsInRole("Admin") || user.HasClaim("Permission", "System.FullAccess")) return true;
             if (user.HasClaim("ScopedPerm", $"{permission}:Global")) return true;
 
             return user.HasClaim("DeptPerm", $"{permission}:{targetDepartmentId}");

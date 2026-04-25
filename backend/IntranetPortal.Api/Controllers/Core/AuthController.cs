@@ -327,15 +327,16 @@ namespace IntranetPortal.Api.Controllers
             var testDept = await _context.Departments.FirstOrDefaultAsync(d => d.Name == "IT Department");
             if (testDept == null)
             {
-                testDept = new IntranetPortal.Data.Models.Department { Name = "IT Department", Description = "IT Department", Site = testSite };
+                testDept = new Department { Name = "IT Department", Description = "IT Department", Site = testSite };
                 _context.Departments.Add(testDept);
                 await _context.SaveChangesAsync();
             }
 
-            var adminEmployee = new IntranetPortal.Data.Models.Employee
+            var adminEmployee = new Employee
             {
                 FullName = "System Administrator",
                 Email = "admin@company.com",
+                EmployeeNumber = "EMP-001", // Unified requirement
                 Site = testSite,
                 Department = testDept
             };
@@ -369,7 +370,7 @@ namespace IntranetPortal.Api.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("SecurityStamp", user.SecurityStamp.ToString()),
-                new Claim("EmployeeId", user.EmployeeId?.ToString() ?? ""),
+                new Claim("EmployeeId", user.Employee?.Id.ToString() ?? ""),
                 new Claim("FullName", user.Employee?.FullName ?? ""),
                 new Claim("SiteId", user.Employee?.SiteId.ToString() ?? ""),
                 new Claim("DepartmentId", user.Employee?.DepartmentId.ToString() ?? ""),

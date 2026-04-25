@@ -28,7 +28,7 @@ namespace IntranetPortal.Api.Controllers
             var query = _context.Announcements.Include(a => a.Author).AsQueryable();
 
             int? userSiteId = null;
-            var empClaim = User.Claims.FirstOrDefault(c => c.Type == "employeeId")?.Value;
+            var empClaim = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value;
             if (!string.IsNullOrEmpty(empClaim) && int.TryParse(empClaim, out int empId))
             {
                 userSiteId = await _context.Employees.Where(e => e.Id == empId).Select(e => (int?)e.SiteId).FirstOrDefaultAsync();
@@ -59,8 +59,8 @@ namespace IntranetPortal.Api.Controllers
         {
             if (!_permissionService.ValidateSiteScope("Announcements.Create", dto.SiteId)) return Forbid();
 
-            // Try extracting EmployeeId from token natively if possible (Claim "employeeId")
-            var empClaim = User.Claims.FirstOrDefault(c => c.Type == "employeeId")?.Value;
+            // Try extracting EmployeeId from token natively if possible (Claim "EmployeeId")
+            var empClaim = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value;
             int authorId = dto.AuthorId;
             if (int.TryParse(empClaim, out int tokenEmpId)) {
                 authorId = tokenEmpId;

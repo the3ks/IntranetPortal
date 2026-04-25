@@ -1,4 +1,4 @@
-namespace IntranetPortal.Data.Models
+namespace IntranetPortal.Data.Models.HR
 {
     public class Position
     {

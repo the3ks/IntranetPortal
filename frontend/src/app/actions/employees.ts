@@ -16,18 +16,18 @@ export async function createEmployeeAction(formData: FormData) {
     allowLogin: formData.get("allowLogin") !== null,
   };
 
-  const res = await fetchWithAuth("/api/employees", {
+  const res = await fetchWithAuth("/api/hr/employees", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
 
   if (res.ok) {
-    revalidatePath("/employees");
+    revalidatePath("/hr/employee-records");
   } else {
     throw new Error("Failed to create profile securely");
   }
-  redirect("/employees");
+  redirect("/hr/employee-records");
 }
 
 export async function updateEmployeeAction(formData: FormData) {
@@ -44,24 +44,24 @@ export async function updateEmployeeAction(formData: FormData) {
     allowLogin: formData.get("allowLogin") !== null,
   };
 
-  const res = await fetchWithAuth(`/api/employees/${id}`, {
+  const res = await fetchWithAuth(`/api/hr/employees/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
 
   if (res.ok) {
-    revalidatePath("/employees");
+    revalidatePath("/hr/employee-records");
   } else {
     throw new Error("Failed to save assignment variables safely");
   }
-  redirect("/employees");
+  redirect("/hr/employee-records");
 }
 
 export async function deleteEmployeeAction(id: number) {
-  const res = await fetchWithAuth(`/api/employees/${id}`, { method: "DELETE" });
+  const res = await fetchWithAuth(`/api/hr/employees/${id}`, { method: "DELETE" });
   if (res.ok) {
-    revalidatePath("/employees");
+    revalidatePath("/hr/employee-records");
   } else {
     throw new Error("Failed to structurally delete the entity");
   }

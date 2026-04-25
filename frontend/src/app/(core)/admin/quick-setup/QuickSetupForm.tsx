@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { submitQuickSetupAction, importEmployeesCsvAction, seedAssetsAction } from "@/app/actions/setup";
+import { submitQuickSetupAction, importEmployeesCsvAction, seedAssetsAction, seedEmployeesAction } from "@/app/actions/setup";
 
 export default function QuickSetupForm() {
   const [loading, setLoading] = useState(false);
   const [loadingCsv, setLoadingCsv] = useState(false);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [success, setSuccess] = useState<any>(null);
   const [csvSuccess, setCsvSuccess] = useState<any>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -254,7 +255,26 @@ export default function QuickSetupForm() {
           <p className="text-foreground/60 mt-1">Upload a CSV payload or execute quick data seeds to mass-generate hardware payloads and stockpiles.</p>
         </header>
         <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10">
-          <button type="button" onClick={async () => {
+          <button type="button" disabled={loading || loadingEmployees} onClick={async () => {
+            if (!confirm("Seed 20 demo Employees? Ensure you have at least 1 Site and Department created first.")) return;
+            setLoadingEmployees(true);
+            try {
+              const res = await seedEmployeesAction();
+              const result = JSON.parse(res);
+              if (result.success) {
+                alert(result.data.message + " (" + result.data.stats.employees + " records)");
+              } else {
+                alert("Failed to seed employees: " + result.error);
+              }
+            } finally {
+              setLoadingEmployees(false);
+            }
+          }} className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2 disabled:opacity-50">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            Seed Demo Employees
+          </button>
+          
+          <button type="button" disabled={loading} onClick={async () => {
             if (!confirm("Seed demo Assets Data? Ensure you have at least 1 Site and Department created first.")) return;
             setLoading(true);
             try {

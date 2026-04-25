@@ -1,6 +1,5 @@
 import { fetchWithAuth } from "@/lib/api";
 import { revalidatePath } from "next/cache";
-import MainLayout from "@/components/layout/MainLayout";
 
 async function createPosition(formData: FormData) {
   "use server";
@@ -8,26 +7,25 @@ async function createPosition(formData: FormData) {
     name: formData.get("name"),
     description: formData.get("description"),
   };
-  await fetchWithAuth("/api/positions", {
+  await fetchWithAuth("/api/hr/positions", {
     method: "POST",
     body: JSON.stringify(data)
   });
-  revalidatePath("/admin/positions");
+  revalidatePath("/hr/positions");
 }
 
 async function deletePosition(id: number) {
   "use server";
-  await fetchWithAuth(`/api/positions/${id}`, { method: "DELETE" });
-  revalidatePath("/admin/positions");
+  await fetchWithAuth(`/api/hr/positions/${id}`, { method: "DELETE" });
+  revalidatePath("/hr/positions");
 }
 
 export default async function PositionsAdminPage() {
-  const res = await fetchWithAuth("/api/positions", { cache: "no-store" });
+  const res = await fetchWithAuth("/api/hr/positions", { cache: "no-store" });
   const positions = res.ok ? await res.json() : [];
 
   return (
-    <MainLayout>
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto py-8 space-y-8">
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <p className="text-foreground/60 mt-2 text-lg">Define the official HR Job Titles available for Organizational Mapping.</p>
@@ -102,6 +100,5 @@ export default async function PositionsAdminPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
   );
 }

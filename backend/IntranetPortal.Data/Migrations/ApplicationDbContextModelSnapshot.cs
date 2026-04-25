@@ -619,7 +619,309 @@ namespace IntranetPortal.Data.Migrations
                     b.ToTable("Core_AuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("IntranetPortal.Data.Models.Department", b =>
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.AttendanceLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ClockInTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("ClockOutTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("HR_AttendanceLogs", (string)null);
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.Department", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int?>("ManagerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int?>("ParentDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SiteId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManagerId");
+
+                    b.HasIndex("ParentDepartmentId");
+
+                    b.HasIndex("SiteId");
+
+                    b.ToTable("HR_Departments", (string)null);
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.Employee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DirectManagerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("EmergencyContactName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EmergencyContactPhone")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EmployeeNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime?>("HireDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("PositionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SiteId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TeamId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserAccountId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DirectManagerId");
+
+                    b.HasIndex("PositionId");
+
+                    b.HasIndex("SiteId");
+
+                    b.HasIndex("TeamId");
+
+                    b.HasIndex("UserAccountId")
+                        .IsUnique();
+
+                    b.ToTable("HR_Employees", (string)null);
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.EmployeeOnboardingTask", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("OnboardingTaskId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("OnboardingTaskId");
+
+                    b.ToTable("HR_EmployeeOnboardingTasks", (string)null);
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.LeaveRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ApprovedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("LeaveTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasDefaultValue("Pending");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("LeaveTypeId");
+
+                    b.ToTable("HR_LeaveRequests", (string)null);
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.LeaveType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DaysAllowed")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HR_LeaveTypes", (string)null);
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.OnboardingTask", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssigneeRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId");
+
+                    b.ToTable("HR_OnboardingTasks", (string)null);
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.OnboardingTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HR_OnboardingTemplates", (string)null);
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.Position", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -634,55 +936,9 @@ namespace IntranetPortal.Data.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("SiteId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("SiteId");
-
-                    b.ToTable("Core_Departments", (string)null);
-                });
-
-            modelBuilder.Entity("IntranetPortal.Data.Models.Employee", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("DepartmentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int?>("PositionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SiteId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TeamId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DepartmentId");
-
-                    b.HasIndex("PositionId");
-
-                    b.HasIndex("SiteId");
-
-                    b.HasIndex("TeamId");
-
-                    b.ToTable("Core_Employees", (string)null);
+                    b.ToTable("HR_Positions", (string)null);
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.LoginChallenge", b =>
@@ -755,26 +1011,6 @@ namespace IntranetPortal.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Core_Permissions", (string)null);
-                });
-
-            modelBuilder.Entity("IntranetPortal.Data.Models.Position", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Core_Positions", (string)null);
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Role", b =>
@@ -905,6 +1141,9 @@ namespace IntranetPortal.Data.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("varchar(150)");
 
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
                     b.Property<string>("Url")
                         .IsRequired()
                         .HasMaxLength(300)
@@ -987,8 +1226,6 @@ namespace IntranetPortal.Data.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("EmployeeId");
-
                     b.ToTable("Core_UserAccounts", (string)null);
                 });
 
@@ -1042,7 +1279,7 @@ namespace IntranetPortal.Data.Migrations
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Announcement", b =>
                 {
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "Author")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "Author")
                         .WithMany()
                         .HasForeignKey("AuthorId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1065,7 +1302,7 @@ namespace IntranetPortal.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("IntranetPortal.Data.Models.Department", "Department")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1090,12 +1327,12 @@ namespace IntranetPortal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "FulfilledByEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "FulfilledByEmployee")
                         .WithMany()
                         .HasForeignKey("FulfilledByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "RequestedByEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "RequestedByEmployee")
                         .WithMany()
                         .HasForeignKey("RequestedByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1116,7 +1353,7 @@ namespace IntranetPortal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "Employee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "Employee")
                         .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1135,7 +1372,7 @@ namespace IntranetPortal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IntranetPortal.Data.Models.Department", "Department")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1148,12 +1385,12 @@ namespace IntranetPortal.Data.Migrations
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Assets.Asset", b =>
                 {
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "CreatedByEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "CreatedByEmployee")
                         .WithMany()
                         .HasForeignKey("CreatedByEmployeeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("IntranetPortal.Data.Models.Department", "Department")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1186,13 +1423,13 @@ namespace IntranetPortal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "AssignedByEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "AssignedByEmployee")
                         .WithMany()
                         .HasForeignKey("AssignedByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "AssignedToEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "AssignedToEmployee")
                         .WithMany()
                         .HasForeignKey("AssignedToEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1202,7 +1439,7 @@ namespace IntranetPortal.Data.Migrations
                         .HasForeignKey("AssignedToTeamId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "ReturnedByEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "ReturnedByEmployee")
                         .WithMany()
                         .HasForeignKey("ReturnedByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1226,7 +1463,7 @@ namespace IntranetPortal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "PerformedByEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "PerformedByEmployee")
                         .WithMany()
                         .HasForeignKey("PerformedByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1288,7 +1525,7 @@ namespace IntranetPortal.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "LoggedByEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "LoggedByEmployee")
                         .WithMany()
                         .HasForeignKey("LoggedByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1312,13 +1549,13 @@ namespace IntranetPortal.Data.Migrations
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Assets.AssetRequest", b =>
                 {
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "RequestedByEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "RequestedByEmployee")
                         .WithMany()
                         .HasForeignKey("RequestedByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "RequestedForEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "RequestedForEmployee")
                         .WithMany()
                         .HasForeignKey("RequestedForEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1331,7 +1568,7 @@ namespace IntranetPortal.Data.Migrations
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Assets.AssetRequestLineItem", b =>
                 {
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "ApprovedByEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "ApprovedByEmployee")
                         .WithMany()
                         .HasForeignKey("ApprovedByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1352,7 +1589,7 @@ namespace IntranetPortal.Data.Migrations
                         .HasForeignKey("AssignedAssetId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "FulfilledByEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "FulfilledByEmployee")
                         .WithMany()
                         .HasForeignKey("FulfilledByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1372,7 +1609,7 @@ namespace IntranetPortal.Data.Migrations
                         .HasForeignKey("RequestedModelId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "SelectedApproverEmployee")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "SelectedApproverEmployee")
                         .WithMany()
                         .HasForeignKey("SelectedApproverEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1396,28 +1633,58 @@ namespace IntranetPortal.Data.Migrations
                     b.Navigation("SelectedApproverEmployee");
                 });
 
-            modelBuilder.Entity("IntranetPortal.Data.Models.Department", b =>
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.AttendanceLog", b =>
                 {
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "Employee")
+                        .WithMany("AttendanceLogs")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.Department", b =>
+                {
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "Manager")
+                        .WithMany("ManagedDepartments")
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("IntranetPortal.Data.Models.HR.Department", "ParentDepartment")
+                        .WithMany("ChildDepartments")
+                        .HasForeignKey("ParentDepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("IntranetPortal.Data.Models.Site", "Site")
                         .WithMany()
                         .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("ParentDepartment");
 
                     b.Navigation("Site");
                 });
 
-            modelBuilder.Entity("IntranetPortal.Data.Models.Employee", b =>
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.Employee", b =>
                 {
-                    b.HasOne("IntranetPortal.Data.Models.Department", "Department")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Department", "Department")
                         .WithMany("Employees")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("IntranetPortal.Data.Models.Position", "Position")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "DirectManager")
+                        .WithMany("DirectReports")
+                        .HasForeignKey("DirectManagerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IntranetPortal.Data.Models.HR.Position", "Position")
                         .WithMany("Employees")
-                        .HasForeignKey("PositionId");
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("IntranetPortal.Data.Models.Site", "Site")
                         .WithMany("Employees")
@@ -1429,13 +1696,79 @@ namespace IntranetPortal.Data.Migrations
                         .WithMany("Employees")
                         .HasForeignKey("TeamId");
 
+                    b.HasOne("IntranetPortal.Data.Models.UserAccount", "UserAccount")
+                        .WithOne("Employee")
+                        .HasForeignKey("IntranetPortal.Data.Models.HR.Employee", "UserAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Department");
+
+                    b.Navigation("DirectManager");
 
                     b.Navigation("Position");
 
                     b.Navigation("Site");
 
                     b.Navigation("Team");
+
+                    b.Navigation("UserAccount");
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.EmployeeOnboardingTask", b =>
+                {
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "Employee")
+                        .WithMany("OnboardingTasks")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IntranetPortal.Data.Models.HR.OnboardingTask", "OnboardingTask")
+                        .WithMany()
+                        .HasForeignKey("OnboardingTaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("OnboardingTask");
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.LeaveRequest", b =>
+                {
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IntranetPortal.Data.Models.HR.Employee", "Employee")
+                        .WithMany("LeaveRequests")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IntranetPortal.Data.Models.HR.LeaveType", "LeaveType")
+                        .WithMany()
+                        .HasForeignKey("LeaveTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("LeaveType");
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.OnboardingTask", b =>
+                {
+                    b.HasOne("IntranetPortal.Data.Models.HR.OnboardingTemplate", "Template")
+                        .WithMany("Tasks")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Template");
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.LoginChallenge", b =>
@@ -1496,7 +1829,7 @@ namespace IntranetPortal.Data.Migrations
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Team", b =>
                 {
-                    b.HasOne("IntranetPortal.Data.Models.Department", "Department")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1505,18 +1838,9 @@ namespace IntranetPortal.Data.Migrations
                     b.Navigation("Department");
                 });
 
-            modelBuilder.Entity("IntranetPortal.Data.Models.UserAccount", b =>
-                {
-                    b.HasOne("IntranetPortal.Data.Models.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId");
-
-                    b.Navigation("Employee");
-                });
-
             modelBuilder.Entity("IntranetPortal.Data.Models.UserRole", b =>
                 {
-                    b.HasOne("IntranetPortal.Data.Models.Department", "Department")
+                    b.HasOne("IntranetPortal.Data.Models.HR.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId");
 
@@ -1604,7 +1928,32 @@ namespace IntranetPortal.Data.Migrations
                     b.Navigation("LineItems");
                 });
 
-            modelBuilder.Entity("IntranetPortal.Data.Models.Department", b =>
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.Department", b =>
+                {
+                    b.Navigation("ChildDepartments");
+
+                    b.Navigation("Employees");
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.Employee", b =>
+                {
+                    b.Navigation("AttendanceLogs");
+
+                    b.Navigation("DirectReports");
+
+                    b.Navigation("LeaveRequests");
+
+                    b.Navigation("ManagedDepartments");
+
+                    b.Navigation("OnboardingTasks");
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.OnboardingTemplate", b =>
+                {
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("IntranetPortal.Data.Models.HR.Position", b =>
                 {
                     b.Navigation("Employees");
                 });
@@ -1612,11 +1961,6 @@ namespace IntranetPortal.Data.Migrations
             modelBuilder.Entity("IntranetPortal.Data.Models.Permission", b =>
                 {
                     b.Navigation("RolePermissions");
-                });
-
-            modelBuilder.Entity("IntranetPortal.Data.Models.Position", b =>
-                {
-                    b.Navigation("Employees");
                 });
 
             modelBuilder.Entity("IntranetPortal.Data.Models.Role", b =>
@@ -1638,6 +1982,8 @@ namespace IntranetPortal.Data.Migrations
 
             modelBuilder.Entity("IntranetPortal.Data.Models.UserAccount", b =>
                 {
+                    b.Navigation("Employee");
+
                     b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618

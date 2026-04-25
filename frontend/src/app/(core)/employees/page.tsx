@@ -1,8 +1,5 @@
 import { fetchWithAuth } from "@/lib/api";
 import MainLayout from "@/components/layout/MainLayout";
-import Link from "next/link";
-import { deleteEmployeeAction } from "@/app/actions/employees";
-import { cookies } from "next/headers";
 
 interface Employee {
   id: number;
@@ -23,33 +20,8 @@ import SearchFilter from "@/components/SearchFilter";
 export default async function EmployeesPage({ searchParams }: { searchParams: Promise<{ siteId?: string, search?: string }> }) {
   const { siteId, search } = await searchParams;
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth_token")?.value || "";
-  let user: any = null;
-  if (token) {
-    try {
-      user = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-    } catch { }
-  }
-
-  const userRoleClaim = user?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || user?.role || user?.Role;
-  const isAdmin = userRoleClaim === "Admin" || (Array.isArray(userRoleClaim) && userRoleClaim.includes("Admin"));
-  const permissionsClaim = user?.Permission || user?.permission || [];
-  const permissions = Array.isArray(permissionsClaim) ? permissionsClaim : [permissionsClaim];
-
-  const scopedPermsClaim = user?.ScopedPerm || user?.scopedperm || [];
-  const scopedPerms = Array.isArray(scopedPermsClaim) ? scopedPermsClaim : [scopedPermsClaim];
-
-  const canCreate = isAdmin || permissions.includes("HR.Employee.Create");
-
-  const hasSitePermission = (permission: string, targetSiteId: number) => {
-    if (isAdmin) return true;
-    if (scopedPerms.includes(`${permission}:Global`)) return true;
-    return scopedPerms.includes(`${permission}:${targetSiteId}`);
-  };
-
   const [res, siteRes] = await Promise.all([
-    fetchWithAuth(`/api/employees?search=${search ? encodeURIComponent(search) : ''}`, { cache: 'no-store' }),
+    fetchWithAuth(`/api/hr/employees?search=${search ? encodeURIComponent(search) : ''}`, { cache: 'no-store' }),
     fetchWithAuth("/api/sites", { cache: 'no-store' })
   ]);
 
@@ -63,35 +35,23 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
     employees = employees.filter(e => e.siteId.toString() === siteId);
   }
 
-  const permittedSites = allSites.filter(s => hasSitePermission("HR.Employee.View", s.id));
-  const filterDisabled = !isAdmin && permittedSites.length <= 1 && !scopedPerms.includes("HR.Employee.View:Global");
+  const visibleSiteIds = new Set(employees.map((e) => e.siteId));
+  const filterSites = allSites.filter((s) => visibleSiteIds.has(s.id));
+  const filterDisabled = filterSites.length <= 1;
 
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto space-y-8">
         <header className="bg-card p-6 sm:p-8 rounded-3xl shadow-sm border border-border/50 space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-end gap-6">
-            {/* Left side: Search & Filter Tools */}
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-full justify-end">
               <div className="w-full sm:w-full relative z-20">
                 <SearchFilter placeholder="Search personnel by name or email..." />
               </div>
               <div className="w-full sm:w-auto relative z-10 shrink-0">
-                <SiteFilter sites={permittedSites} currentSiteId={siteId} disabled={filterDisabled} />
+                <SiteFilter sites={filterSites} currentSiteId={siteId} disabled={filterDisabled} />
               </div>
             </div>
-
-            {/* Right side: Primary Action */}
-            {canCreate && (
-              <div className="w-full lg:w-auto shrink-0 flex sm:justify-end">
-                <Link href="/employees/new" className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-100 whitespace-nowrap w-full sm:w-auto">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  New Employee
-                </Link>
-              </div>
-            )}
           </div>
         </header>
 
@@ -114,7 +74,6 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
                     <th className="px-8 py-5">Personnel</th>
                     <th className="px-8 py-5">Department</th>
                     <th className="px-8 py-5">Site / Location</th>
-                    <th className="px-8 py-5 text-right w-32">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -144,18 +103,6 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
                           </svg>
                           {emp.siteName}
                         </span>
-                      </td>
-                      <td className="px-8 py-5 flex items-center justify-end space-x-2">
-                        {hasSitePermission("HR.Employee.Edit", emp.siteId) && (
-                          <Link href={`/employees/${emp.id}/edit`} className="text-foreground/60 hover:text-blue-500 transition-colors font-semibold text-sm bg-background hover:bg-blue-500/10 px-4 py-2 rounded-lg border border-transparent hover:border-blue-500/20">
-                            Edit
-                          </Link>
-                        )}
-                        {hasSitePermission("HR.Employee.Edit", emp.siteId) && (
-                          <form action={deleteEmployeeAction.bind(null, emp.id)}>
-                            <button type="submit" className="text-foreground/60 hover:text-rose-500 transition-colors font-semibold text-sm bg-background hover:bg-rose-500/10 px-4 py-2 rounded-lg border border-transparent hover:border-rose-500/20">Delete</button>
-                          </form>
-                        )}
                       </td>
                     </tr>
                   ))}

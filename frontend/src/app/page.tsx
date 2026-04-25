@@ -1,6 +1,7 @@
 import MainLayout from "@/components/layout/MainLayout";
 import Link from "next/link";
 import { fetchWithAuth } from "@/lib/api";
+import AttendanceWidget from "@/components/hr/AttendanceWidget";
 
 export default async function Home() {
   const res = await fetchWithAuth("/api/announcements?limit=2", { cache: 'no-store' });
@@ -23,6 +24,8 @@ export default async function Home() {
         <h2 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight mb-4">Universal Portal</h2>
         <p className="text-foreground/70 text-xl font-medium">Select an application below to contextually launch its capabilities.</p>
       </div>
+
+      <AttendanceWidget />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl mx-auto">
         {modules.map((mod: any, index: number) => {

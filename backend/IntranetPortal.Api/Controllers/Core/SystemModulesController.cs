@@ -24,7 +24,7 @@ namespace IntranetPortal.Api.Controllers.Core
             var siteIdStr = User.FindFirst("SiteId")?.Value;
             int? userSiteId = string.IsNullOrEmpty(siteIdStr) ? null : int.Parse(siteIdStr);
 
-            var query = _context.SystemModules
+            IQueryable<SystemModule> query = _context.SystemModules
                 .Where(m => m.IsActive);
             
             if (userSiteId.HasValue)
@@ -33,7 +33,7 @@ namespace IntranetPortal.Api.Controllers.Core
                 query = query.Where(m => m.AllowedSites.Any(s => s.Id == userSiteId.Value));
             }
 
-            var modules = await query.ToListAsync();
+            var modules = await query.OrderBy(m => m.Order).ToListAsync();
             return Ok(modules);
         }
 
@@ -45,6 +45,7 @@ namespace IntranetPortal.Api.Controllers.Core
         {
             var modules = await _context.SystemModules
                 .Include(m => m.AllowedSites)
+                .OrderBy(m => m.Order)
                 .ToListAsync();
             return Ok(modules);
         }
@@ -71,6 +72,7 @@ namespace IntranetPortal.Api.Controllers.Core
             module.IconSvg = updatedModule.IconSvg;
             module.IsActiveGlobally = updatedModule.IsActiveGlobally;
             module.IsActive = updatedModule.IsActive;
+            module.Order = updatedModule.Order;
 
             // Simple many-to-many update (Assumes frontend sends bare allowed sites)
             module.AllowedSites.Clear();

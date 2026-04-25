@@ -209,6 +209,57 @@ namespace IntranetPortal.Api.Controllers
             });
         }
 
+        [HttpPost("seed-employees")]
+        public async Task<IActionResult> SeedEmployees()
+        {
+            var site = await _context.Sites.FirstOrDefaultAsync();
+            var dept = await _context.Departments.FirstOrDefaultAsync();
+            if (site == null || dept == null) return BadRequest("Please run QuickSetup first to generate a Site and Department.");
+
+            var firstNames = new[] { "James", "Mary", "Robert", "Patricia", "John", "Jennifer", "Michael", "Linda", "David", "Elizabeth", "William", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Christopher", "Karen" };
+            var lastNames = new[] { "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin" };
+            
+            var employeesAdded = 0;
+            var accountsAdded = 0;
+
+            for (int i = 0; i < 20; i++)
+            {
+                var email = $"user{i + 1}@company.com";
+                if (await _context.Employees.AnyAsync(e => e.Email == email)) continue;
+
+                var employee = new Employee
+                {
+                    FullName = $"{firstNames[i % firstNames.Length]} {lastNames[i % lastNames.Length]}",
+                    Email = email,
+                    EmployeeNumber = $"EMP-{100 + i}",
+                    SiteId = site.Id,
+                    DepartmentId = dept.Id,
+                    HireDate = DateTime.UtcNow.AddMonths(-i)
+                };
+
+                _context.Employees.Add(employee);
+                employeesAdded++;
+
+                var userAccount = new UserAccount
+                {
+                    Email = email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
+                    IsActive = true,
+                    Employee = employee
+                };
+                _context.UserAccounts.Add(userAccount);
+                accountsAdded++;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new 
+            { 
+                Message = "Employee Data seeded successfully.",
+                Stats = new { employees = employeesAdded, accounts = accountsAdded }
+            });
+        }
+
         [HttpPost("import-employees")]
         public async Task<IActionResult> ImportEmployees(IFormFile file)
         {
@@ -281,6 +332,7 @@ namespace IntranetPortal.Api.Controllers
                     {
                         FullName = rec.FullName.Trim(),
                         Email = normalizedEmail,
+                        EmployeeNumber = $"EMP-{Guid.NewGuid().ToString("N")[..8].ToUpper()}", // Generate unique number
                         PositionId = position?.Id,
                         DepartmentId = dept.Id,
                         TeamId = team?.Id,
@@ -306,7 +358,7 @@ namespace IntranetPortal.Api.Controllers
                 else
                 {
                     var allowStr = rec.AllowLogin?.Trim().ToLower() ?? "yes";
-                    var existingAcc = await _context.UserAccounts.FirstOrDefaultAsync(u => u.EmployeeId == employee.Id);
+                    var existingAcc = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
 
                     if (allowStr == "yes" || allowStr == "true" || allowStr == "1" || allowStr == "y")
                     {

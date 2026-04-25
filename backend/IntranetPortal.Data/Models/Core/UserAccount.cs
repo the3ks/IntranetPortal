@@ -22,7 +22,7 @@ namespace IntranetPortal.Data.Models
         public string? RefreshToken { get; set; }
         public DateTimeOffset? RefreshTokenExpiryTime { get; set; }
 
-        // Foreign Key to the Employee record
+        // Link to the unified HR Employee record
         public int? EmployeeId { get; set; }
         public Employee? Employee { get; set; }
     }
