@@ -16,7 +16,7 @@ function formatDuration(clockIn: string | null, clockOut: string | null) {
 }
 
 export default function AttendanceHistoryClient() {
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

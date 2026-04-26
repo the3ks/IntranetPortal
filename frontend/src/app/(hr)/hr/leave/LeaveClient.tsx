@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 
 export default function LeaveClient() {
-  const [requests, setRequests] = useState([]);
-  const [approvals, setApprovals] = useState([]);
+  const [requests, setRequests] = useState<any[]>([]);
+  const [approvals, setApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

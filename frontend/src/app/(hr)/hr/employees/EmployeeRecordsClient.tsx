@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 
 export default function EmployeeRecordsClient() {
-  const [employees, setEmployees] = useState([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 
 export default function DepartmentsClient() {
-  const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
