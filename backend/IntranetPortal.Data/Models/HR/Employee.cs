@@ -8,8 +8,7 @@ namespace IntranetPortal.Data.Models.HR
     {
         public int Id { get; set; }
         
-        // 1-to-1 Mapping to Core UserAccount (Identity)
-        public int UserAccountId { get; set; }
+        // Optional Login Account (Not all employees have one)
         public UserAccount? UserAccount { get; set; }
 
         // Core Personnel Data

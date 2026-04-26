@@ -164,6 +164,8 @@ namespace IntranetPortal.Api.Controllers
             // 3. Assets
             if (!await _context.Assets.AnyAsync())
             {
+                var firstEmp = await _context.Employees.FirstOrDefaultAsync();
+                
                 _context.Assets.AddRange(
                     new Asset { AssetTag = "IT-LPT-001", SerialNumber = "XPS15-A1", ModelId = modelXps.Id, Status = AssetStatus.Available, SiteId = site.Id, DepartmentId = dept.Id, PurchaseDate = DateTime.UtcNow.AddMonths(-6) },
                     new Asset { AssetTag = "IT-LPT-002", SerialNumber = "XPS15-A2", ModelId = modelXps.Id, Status = AssetStatus.Available, SiteId = site.Id, DepartmentId = dept.Id, PurchaseDate = DateTime.UtcNow.AddMonths(-5) },
@@ -173,6 +175,19 @@ namespace IntranetPortal.Api.Controllers
                 );
                 assetsAdded += 5;
                 await _context.SaveChangesAsync();
+
+                // 3.1 Verify Personnel Link via Assignment
+                if (firstEmp != null)
+                {
+                    var assignedAsset = await _context.Assets.FirstAsync(a => a.AssetTag == "IT-LPT-003");
+                    _context.AssetAssignments.Add(new AssetAssignment 
+                    { 
+                        AssetId = assignedAsset.Id, 
+                        AssignedToEmployeeId = firstEmp.Id, 
+                        DateAssigned = DateTime.UtcNow,
+                        AssignedByEmployeeId = firstEmp.Id // Self-assigned for seeding purposes
+                    });
+                }
             }
 
             // 4. Accessory
@@ -221,6 +236,7 @@ namespace IntranetPortal.Api.Controllers
             
             var employeesAdded = 0;
             var accountsAdded = 0;
+            var newEmployees = new List<Employee>();
 
             for (int i = 0; i < 20; i++)
             {
@@ -238,13 +254,20 @@ namespace IntranetPortal.Api.Controllers
                 };
 
                 _context.Employees.Add(employee);
+                newEmployees.Add(employee);
                 employeesAdded++;
+            }
+            // Save Employees first so we have their physical IDs for account mapping
+            await _context.SaveChangesAsync();
 
+            foreach (var employee in newEmployees)
+            {
                 var userAccount = new UserAccount
                 {
-                    Email = email,
+                    Email = employee.Email,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
                     IsActive = true,
+                    EmployeeId = employee.Id,
                     Employee = employee
                 };
                 _context.UserAccounts.Add(userAccount);
@@ -345,11 +368,15 @@ namespace IntranetPortal.Api.Controllers
                     var allowStr = rec.AllowLogin?.Trim().ToLower() ?? "yes";
                     if (allowStr == "yes" || allowStr == "true" || allowStr == "1" || allowStr == "y")
                     {
+                        // Save employee first to get physical ID for the required relationship
+                        await _context.SaveChangesAsync(); 
+
                         var userAcc = new UserAccount
                         {
                             Email = employee.Email,
                             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
                             IsActive = true,
+                            EmployeeId = employee.Id,
                             Employee = employee
                         };
                         _context.UserAccounts.Add(userAcc);
@@ -369,6 +396,7 @@ namespace IntranetPortal.Api.Controllers
                                 Email = normalizedEmail,
                                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
                                 IsActive = true,
+                                EmployeeId = employee.Id,
                                 Employee = employee
                             };
                             _context.UserAccounts.Add(userAcc);

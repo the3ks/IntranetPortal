@@ -277,13 +277,21 @@ namespace IntranetPortal.Api.Controllers
             var legacyRole = user.UserRoles.Any(ur => ur.Role.Name == "Admin") ? "Admin" : "Staff";
 
             var expireDays = _config.GetValue<int>("Security:AccessTokenExpirationDays", 7);
-            Response.Cookies.Append("auth_token", token, new CookieOptions
+            var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // Force HTTPS
-                SameSite = SameSiteMode.Lax, // Allow SSO bridging across Subdomains in Chrome
+                Secure = !_env.IsDevelopment(), // Disable secure on localhost for easier dev
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(expireDays)
-            });
+            };
+
+            var sharedDomain = _config["Security:CookieDomain"];
+            if (!string.IsNullOrEmpty(sharedDomain) && !_env.IsDevelopment())
+            {
+                cookieOptions.Domain = sharedDomain;
+            }
+
+            Response.Cookies.Append("auth_token", token, cookieOptions);
             
             // Delete obsolete refresh_token cookie on browser if it exists
             Response.Cookies.Append("refresh_token", "", new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(-1) });
@@ -299,54 +307,72 @@ namespace IntranetPortal.Api.Controllers
                 return NotFound(new { Message = "Testing and Seeding endpoints are completely disabled outside of the Local Development environment." });
             }
 
-            var existingUsers = await _context.UserAccounts.Where(u => u.Email == "admin@company.com").ToListAsync();
-            if (existingUsers.Any())
-            {
-                _context.UserAccounts.RemoveRange(existingUsers);
-                await _context.SaveChangesAsync(); 
-            }
+            // 1. Precise Cleanup: Drop existing admin and their employee record to ensure a clean state
+            // We use a projection (Select u.Id) here because the existing DB record might have a NULL EmployeeId
+            // which would crash the materialization of the full UserAccount entity.
+            var existingUserId = await _context.UserAccounts
+                .Where(u => u.Email == "admin@company.com")
+                .Select(u => (int?)u.Id)
+                .FirstOrDefaultAsync();
 
-            var adminRole = await _context.Roles.Include(r => r.RolePermissions).FirstOrDefaultAsync(r => r.Name == "Admin");
-            if (adminRole == null) 
+            if (existingUserId.HasValue)
+            {
+                var userToDelete = new IntranetPortal.Data.Models.UserAccount { Id = existingUserId.Value, Email = "", PasswordHash = "", EmployeeId = 0, Employee = null! };
+                _context.UserAccounts.Attach(userToDelete);
+                _context.UserAccounts.Remove(userToDelete);
+            }
+            
+            var existingEmpId = await _context.Employees
+                .Where(e => e.Email == "admin@company.com")
+                .Select(e => (int?)e.Id)
+                .FirstOrDefaultAsync();
+
+            if (existingEmpId.HasValue)
+            {
+                var empToDelete = new Employee { Id = existingEmpId.Value, FullName = "", Email = "", EmployeeNumber = "" };
+                _context.Employees.Attach(empToDelete);
+                _context.Employees.Remove(empToDelete);
+            }
+            
+            await _context.SaveChangesAsync();
+
+            // 2. Foundation: Ensure we have at least one Site and Department for the link
+            var site = await _context.Sites.FirstOrDefaultAsync() ?? new IntranetPortal.Data.Models.Site { Name = "Global Headquarters", Address = "Corporate Plaza" };
+            if (site.Id == 0) _context.Sites.Add(site);
+            await _context.SaveChangesAsync();
+
+            var dept = await _context.Departments.FirstOrDefaultAsync() ?? new Department { Name = "Information Technology", SiteId = site.Id };
+            if (dept.Id == 0) _context.Departments.Add(dept);
+            await _context.SaveChangesAsync();
+
+            var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+            if (adminRole == null)
             {
                 adminRole = new IntranetPortal.Data.Models.Role { Name = "Admin", Description = "Global Application Administrator" };
-                var superAdminPerm = new IntranetPortal.Data.Models.Permission { Name = "System.FullAccess", Description = "God-mode capability" };
-                _context.Permissions.Add(superAdminPerm);
-                adminRole.RolePermissions.Add(new IntranetPortal.Data.Models.RolePermission { Role = adminRole, Permission = superAdminPerm });
                 _context.Roles.Add(adminRole);
-            }
-
-            var testSite = await _context.Sites.FirstOrDefaultAsync(s => s.Name == "Global HQ");
-            if (testSite == null)
-            {
-                testSite = new IntranetPortal.Data.Models.Site { Name = "Global HQ", Address = "HQ" };
-                _context.Sites.Add(testSite);
                 await _context.SaveChangesAsync();
             }
 
-            var testDept = await _context.Departments.FirstOrDefaultAsync(d => d.Name == "IT Department");
-            if (testDept == null)
-            {
-                testDept = new Department { Name = "IT Department", Description = "IT Department", Site = testSite };
-                _context.Departments.Add(testDept);
-                await _context.SaveChangesAsync();
-            }
-
+            // 3. Creation: Create the System Administrator Personnel Record
             var adminEmployee = new Employee
             {
                 FullName = "System Administrator",
                 Email = "admin@company.com",
-                EmployeeNumber = "EMP-001", // Unified requirement
-                Site = testSite,
-                Department = testDept
+                EmployeeNumber = "EMP-000",
+                SiteId = site.Id,
+                DepartmentId = dept.Id,
+                HireDate = DateTime.UtcNow
             };
             _context.Employees.Add(adminEmployee);
+            await _context.SaveChangesAsync();
 
-            var admin = new IntranetPortal.Data.Models.UserAccount
+            // 4. Identity: Create the User Account with the required Master Link
+            var adminUser = new IntranetPortal.Data.Models.UserAccount
             {
                 Email = "admin@company.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
                 IsActive = true,
+                EmployeeId = adminEmployee.Id,
                 Employee = adminEmployee,
                 UserRoles = new List<IntranetPortal.Data.Models.UserRole>
                 {
@@ -354,9 +380,10 @@ namespace IntranetPortal.Api.Controllers
                 }
             };
 
-            _context.UserAccounts.Add(admin);
+            _context.UserAccounts.Add(adminUser);
             await _context.SaveChangesAsync();
-            return Ok(new { Message = "Test admin user logically created equipped with Global Resource Scope!" });
+
+            return Ok(new { Message = "System Administrator seeded and linked successfully. Login with Admin123!" });
         }
 
         private string GenerateJwt(IntranetPortal.Data.Models.UserAccount user, List<IntranetPortal.Data.Models.RoleDelegation>? delegations = null)

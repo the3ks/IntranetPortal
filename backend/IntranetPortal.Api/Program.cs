@@ -32,7 +32,8 @@ builder.Services.AddCors(options =>
             var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
             policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
-                  .AllowAnyHeader();
+                  .AllowAnyHeader()
+                  .AllowCredentials();
         }
     });
 });
@@ -185,7 +186,7 @@ using (var scope = app.Services.CreateScope())
     var globalAdminHash = BCrypt.Net.BCrypt.HashPassword("Admin123!");
     
     // 1. First establish God-mode and Roles
-    await IntranetPortal.Data.Data.DatabaseSeeder.InitializeAsync(context, globalAdminHash);
+    await IntranetPortal.Data.Data.DatabaseSeeder.InitializeAsync(context, globalAdminHash, builder.Configuration);
     
     // 2. Dynamically scrape all endpoints to pull custom Developer Capabilities seamlessly
     await IntranetPortal.Api.Security.PermissionScanner.SyncPoliciesAsync(context, typeof(Program).Assembly);

@@ -18,7 +18,11 @@ namespace IntranetPortal.Api.Controllers.HR
         {
             var subClaim = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
             if (string.IsNullOrEmpty(subClaim) || !int.TryParse(subClaim, out int userId)) return null;
-            return await _context.Employees.FirstOrDefaultAsync(r => r.UserAccountId == userId);
+
+            return await _context.UserAccounts
+                .Where(u => u.Id == userId)
+                .Select(u => u.Employee)
+                .FirstOrDefaultAsync();
         }
 
         private static LeaveTypeDto ToLeaveTypeDto(LeaveType t) => new()
@@ -70,8 +74,8 @@ namespace IntranetPortal.Api.Controllers.HR
 
             var requests = await _context.HR_LeaveRequests
                 .Include(r => r.LeaveType)
-                .Include(r => r.Employee).ThenInclude(e => e!.UserAccount)
-                .Include(r => r.ApprovedBy).ThenInclude(a => a!.UserAccount)
+                .Include(r => r.Employee)
+                .Include(r => r.ApprovedBy)
                 .Where(r => r.EmployeeId == employee.Id)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
@@ -109,9 +113,8 @@ namespace IntranetPortal.Api.Controllers.HR
 
             var requests = await _context.HR_LeaveRequests
                 .Include(r => r.LeaveType)
-                .Include(r => r.Employee).ThenInclude(e => e!.UserAccount)
                 .Include(r => r.Employee).ThenInclude(e => e!.Department)
-                .Include(r => r.ApprovedBy).ThenInclude(a => a!.UserAccount)
+                .Include(r => r.ApprovedBy)
                 .Where(r => r.Employee!.DirectManagerId == employee.Id ||
                             (r.Employee.Department != null && r.Employee.Department.ManagerId == employee.Id))
                 .OrderByDescending(r => r.CreatedAt)

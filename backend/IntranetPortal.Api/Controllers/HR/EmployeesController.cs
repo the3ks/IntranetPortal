@@ -31,7 +31,7 @@ namespace IntranetPortal.Api.Controllers.HR
             DateOfBirth = e.DateOfBirth,
             EmergencyContactName = e.EmergencyContactName,
             EmergencyContactPhone = e.EmergencyContactPhone,
-            UserAccountId = e.UserAccountId,
+            UserAccountId = e.UserAccount?.Id ?? 0, // Resolved from navigation
             DepartmentId = e.DepartmentId,
             DepartmentName = e.Department?.Name,
             PositionId = e.PositionId,
@@ -98,7 +98,8 @@ namespace IntranetPortal.Api.Controllers.HR
                 .Include(e => e.Team)
                 .Include(e => e.Site)
                 .Include(e => e.DirectManager)
-                .FirstOrDefaultAsync(e => e.UserAccountId == userId);
+                .Include(e => e.UserAccount)
+                .FirstOrDefaultAsync(e => e.UserAccount != null && e.UserAccount.Id == userId);
 
             if (record == null) return NotFound(new { Message = "No HR record found for your account." });
             return Ok(ToDto(record));
@@ -132,26 +133,17 @@ namespace IntranetPortal.Api.Controllers.HR
         {
             if (!_permissionService.ValidateSiteScope("HR.Employee.Create", dto.SiteId)) return Forbid();
 
-            // 1. Create or Find UserAccount
-            var userAccount = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Email == dto.Email.ToLower());
-            if (userAccount == null)
-            {
-                userAccount = new IntranetPortal.Data.Models.UserAccount
-                {
-                    Email = dto.Email.ToLower(),
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
-                    IsActive = true
-                };
-                _context.UserAccounts.Add(userAccount);
-                await _context.SaveChangesAsync();
-            }
+            var normalizedEmail = dto.Email.ToLower();
 
-            // 2. Create Unified Employee Record
+            // 1. Check for existing record
+            var existingEmp = await _context.Employees.AnyAsync(e => e.Email.ToLower() == normalizedEmail);
+            if (existingEmp) return BadRequest(new { Message = "An employee with this email already exists." });
+
+            // 2. Create Employee Record first
             var employee = new Employee
             {
-                UserAccountId = userAccount.Id,
                 FullName = dto.FullName,
-                Email = dto.Email.ToLower(),
+                Email = normalizedEmail,
                 EmployeeNumber = dto.EmployeeNumber,
                 HireDate = dto.HireDate,
                 DateOfBirth = dto.DateOfBirth,
@@ -165,11 +157,31 @@ namespace IntranetPortal.Api.Controllers.HR
             };
 
             _context.Employees.Add(employee);
-            
-            // Link back to user account if not already linked
-            if (userAccount.EmployeeId == null) userAccount.EmployeeId = employee.Id;
-
             await _context.SaveChangesAsync();
+
+            // 3. Create UserAccount linked to the employee
+            var userAccount = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+            if (userAccount == null)
+            {
+                userAccount = new IntranetPortal.Data.Models.UserAccount
+                {
+                    Email = normalizedEmail,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("Welcome2026!"),
+                    IsActive = true,
+                    EmployeeId = employee.Id,
+                    Employee = employee
+                };
+                _context.UserAccounts.Add(userAccount);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                // Link existing orphan account if allowed by DB (though required prevents orphans)
+                userAccount.EmployeeId = employee.Id;
+                userAccount.Employee = employee;
+                await _context.SaveChangesAsync();
+            }
+
             return Ok(ToDto(employee));
         }
 

@@ -14,11 +14,6 @@ namespace IntranetPortal.Data.Data.Configurations.HR
             builder.Property(x => x.Email).IsRequired().HasMaxLength(200);
             builder.Property(x => x.EmployeeNumber).IsRequired().HasMaxLength(50);
 
-            // Relational mapping to Identity
-            builder.HasOne(x => x.UserAccount)
-                   .WithOne(x => x.Employee)
-                   .HasForeignKey<Employee>(x => x.UserAccountId)
-                   .OnDelete(DeleteBehavior.Restrict);
 
             // Internal Reporting Hierarchy
             builder.HasOne(x => x.DirectManager)

@@ -18,7 +18,11 @@ namespace IntranetPortal.Api.Controllers.HR
         {
             var subClaim = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
             if (string.IsNullOrEmpty(subClaim) || !int.TryParse(subClaim, out int userId)) return null;
-            return await _context.Employees.FirstOrDefaultAsync(r => r.UserAccountId == userId);
+
+            return await _context.UserAccounts
+                .Where(u => u.Id == userId)
+                .Select(u => u.Employee)
+                .FirstOrDefaultAsync();
         }
 
         private static OnboardingTemplateDto ToTemplateDto(OnboardingTemplate t) => new()

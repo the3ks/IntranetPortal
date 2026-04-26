@@ -22,8 +22,8 @@ namespace IntranetPortal.Data.Models
         public string? RefreshToken { get; set; }
         public DateTimeOffset? RefreshTokenExpiryTime { get; set; }
 
-        // Link to the unified HR Employee record
-        public int? EmployeeId { get; set; }
-        public Employee? Employee { get; set; }
+        // Link to the unified HR Employee record (Master Link)
+        public required int EmployeeId { get; set; }
+        public required Employee Employee { get; set; }
     }
 }

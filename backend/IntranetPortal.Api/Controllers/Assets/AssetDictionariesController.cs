@@ -93,7 +93,7 @@ namespace IntranetPortal.Api.Controllers
         {
             var query = _context.UserAccounts
                 .Include(u => u.Employee)
-                .Where(u => u.IsActive && u.EmployeeId.HasValue)
+                .Where(u => u.IsActive && u.EmployeeId != 0)
                 .Where(u => u.UserRoles.Any(ur => 
                     ur.Role.Name == "Admin" || 
                     ur.Role.RolePermissions.Any(rp => 
