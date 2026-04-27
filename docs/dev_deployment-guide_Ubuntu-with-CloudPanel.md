@@ -61,13 +61,35 @@ dotnet publish -c Release -o ./publish
 1. Compress the `./publish` folder into a `.zip`.
 2. Upload and extract it to your CloudPanel server, typically under:
    `/home/clp-user/htdocs/api.yourdomain.com/`
-3. Edit the `appsettings.Production.json` file in that folder to update the MariaDB connection string:
+3. Review `backend/IntranetPortal.Api/README.md` first. That file is the authoritative configuration reference for backend key names, defaults, and production notes.
+4. Edit the `appsettings.Production.json` file in that folder (or preferably inject secrets via environment variables) and verify all production keys, not just the database connection.
+
+   Minimum production checklist:
+
+   - `ConnectionStrings:DefaultConnection`
+   - `JwtSettings:Key`
+   - `JwtSettings:Issuer`
+   - `JwtSettings:Audience`
+   - `InternalApiSettings:Secret`
+   - `AllowedOrigins` (explicit frontend allowlist)
+   - `AllowedHosts` (public API host)
+
+   Optional but commonly required depending on topology/features:
+
+   - `Security:CookieDomain` (cross-subdomain auth cookie sharing)
+   - `ChallengeEncryption:PrivateKeyPem` (stable challenge-login key, especially for multi-instance API)
+   - `Modules:DrinkOrders:Url` (only affects initial seed/default value)
+
+   Example DB block:
    ```json
    "ConnectionStrings": {
      "DefaultConnection": "Server=127.0.0.1;Port=3306;Database=YOUR_DB_NAME;User=YOUR_DB_USER;Password=YOUR_DB_PASSWORD;"
    }
    ```
-4. *Important: Apply Entity Framework migrations to the database from your local machine, or generate an SQL script (`dotnet ef migrations script`) and run it via phpMyAdmin in CloudPanel.*
+5. *Important: Apply Entity Framework migrations to the database from your local machine, or generate an SQL script (`dotnet ef migrations script`) and run it via phpMyAdmin in CloudPanel.*
+
+> [!IMPORTANT]
+> Do not commit real production secrets into source control. Prefer environment variables or a secrets manager for values such as JWT signing key, DB credentials, and internal API secret.
 
 **4. Create the Systemd Service**
 SSH into your server and create a service file to keep the backend running:
@@ -151,6 +173,17 @@ pm2 startup
 - Navigate to `https://api.yourdomain.com/swagger` (if Swagger is enabled in production) or an API health check route to ensure the backend is connected to MariaDB.
 - Navigate to `https://yourdomain.com` to check the Next.js frontend.
 - Check CloudPanel's Nginx error logs (available in the CloudPanel UI under the site's Logs tab) if you receive a `502 Bad Gateway`.
+
+### Post-Deploy Smoke Checklist (5-10 minutes)
+
+- API reachability: confirm `https://api.yourdomain.com` responds (200/401 expected depending on route).
+- Auth flow: sign in via the frontend and verify `auth_token` cookie is issued.
+- Protected endpoint: call one authenticated API route and confirm it returns data (not persistent 401/403 due to misconfigured JWT values).
+- Internal API secret: if using internal endpoints, verify calls with correct `X-Internal-Secret` succeed and incorrect secret is rejected.
+- CORS check: from browser dev tools, confirm frontend-to-API requests are not blocked by CORS.
+- Cookie domain behavior: if `Security:CookieDomain` is set, verify cookie is scoped to the expected parent domain and works across intended subdomains.
+- Frontend API wiring: verify `NEXT_PUBLIC_API_URL` points to production API and no requests fall back to localhost.
+- Logs sanity: check `sudo journalctl -u intranet-api -n 100 --no-pager` and Nginx logs for startup/runtime errors.
 
 ---
 

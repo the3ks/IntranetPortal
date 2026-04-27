@@ -16,6 +16,23 @@ This is the ASP.NET Core Web API backend for the Enterprise Intranet Portal. It 
 
 The API uses ASP.NET Core's cascading configuration system: `appsettings.json` → `appsettings.{Environment}.json` → Environment Variables.
 
+### Dev vs Prod Quick Checklist
+
+| Setting | Development | Production |
+|---|---|---|
+| `ConnectionStrings:DefaultConnection` | Point to local/dev MariaDB or MySQL. | Point to the production database with least-privilege credentials. |
+| `JwtSettings:Key` | Dev secret is acceptable for local use only. | Replace with a strong secret from environment variables or a secrets manager. |
+| `JwtSettings:Issuer` | Must match the frontend's expected API issuer. | Must stay aligned with the deployed frontend and API token validation. |
+| `JwtSettings:Audience` | Must match the local frontend audience expectation. | Must match the deployed frontend audience expectation. |
+| `InternalApiSettings:Secret` | Set a local shared secret if internal endpoints are used in dev. | Required for internal service-to-service endpoints; rotate if exposed. |
+| `AllowedOrigins` | Not required; localhost origins are allowed automatically. | Required; list every allowed frontend origin explicitly. |
+| `AllowedHosts` | Usually `"*"`. | Set to the public API host name. |
+| `Security:CookieDomain` | Usually leave unset. | Set only when auth cookies must work across subdomains, for example `.company.com`. |
+| `ChallengeEncryption:PrivateKeyPem` | Optional unless challenge login is enabled and you need stable keys across restarts. | Strongly recommended when challenge login is enabled, especially in multi-instance deployments. |
+| `Modules:DrinkOrders:Url` | Optional; defaults to `http://localhost:3001` during initial seed. | Optional; set only if the initial seeded module should point to a deployed Drink Orders URL. |
+
+> **Deployment note**: Prefer environment variables or a secrets manager for production secrets instead of storing real credentials or keys in `appsettings.Production.json`.
+
 ### `JwtSettings` ⚠️ Required
 
 | Key | Description | Example |
@@ -55,6 +72,7 @@ Used by controllers that expose internal-only endpoints consumed by microservice
 | `Security:AccessTokenExpirationDays` | `7` | Lifetime of the JWT access token (and its `auth_token` cookie). |
 | `Security:LockoutDurationMinutes` | `30` | How long an IP+email pair or account stays locked after 10 failed login attempts. |
 | `Security:RequireStatefulTokenValidation` | `true` | When `true`, every authenticated request checks the DB/cache for account state and `SecurityStamp`. Set to `false` to fall back to pure stateless JWT (not recommended for production). |
+| `Security:CookieDomain` | *(unset)* | Optional shared cookie domain used in non-development environments (for example `.company.com`) so auth cookies can be sent across subdomains. Leave unset for single-host deployments. |
 
 ---
 
@@ -97,6 +115,18 @@ Standard ASP.NET Core host filtering.
 |---|---|
 | Development | `"*"` |
 | Production | `"api.yourcompany.com"` |
+
+---
+
+### `Modules` (optional)
+
+Used by startup seeding/initial bootstrap defaults. After bootstrap, modules are managed through the System Modules management function and persisted in the database.
+
+| Key | Default | Description |
+|---|---|---|
+| `Modules:DrinkOrders:Url` | `http://localhost:3001` | Optional URL used when seeding the default Drink Orders module if it does not already exist in the database. Set this in production only if you want the initial seeded value to point to a public endpoint. |
+
+> **Note**: Changing this setting does not retroactively update existing module records in the database.
 
 ---
 

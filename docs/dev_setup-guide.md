@@ -19,6 +19,17 @@ Welcome to the Intranet Portal's Developer Documentation Hub! This application r
 3. Run `dotnet ef database update` to sync the entity models.
 4. Run `dotnet run` to boot the web host.
 
+### Backend Configuration Keys
+
+Before running the API, review the backend configuration reference in `backend/IntranetPortal.Api/README.md`.
+
+That README is the authoritative source for:
+- required keys such as `ConnectionStrings:DefaultConnection`, `JwtSettings:*`, and `InternalApiSettings:Secret`
+- optional security and deployment keys such as `Security:*`, `AllowedOrigins`, `AllowedHosts`, `ChallengeEncryption:PrivateKeyPem`, and `Modules:DrinkOrders:Url`
+- environment-specific guidance for Development vs Production values and secret-handling notes
+
+Use this setup guide for bootstrapping the local stack, and use the API README for exact key names, expected values, and operational notes.
+
 ## Running the Portal UI (Local Development)
 1. Open a terminal inside `/frontend`.
 2. Ensure you have installed packages using `npm install`.
@@ -39,10 +50,13 @@ In a Production environment (`ASPNETCORE_ENVIRONMENT=Production`), the very firs
 * If the `Roles` table is completely empty, the backend automatically generates the `System.FullAccess` matrix capability, the `Admin` Role, and binds them to the default `admin@company.com` login with the password `Admin123!`.
 * Make sure to **change this password immediately** upon your first login!
 * The database seeder will never run again as long as the system detects existing roles, protecting your live configurations from accidental overwrites.
+* Before deployment, review `backend/IntranetPortal.Api/README.md` and verify all production configuration keys are explicitly set, especially JWT secrets, DB connection, internal API secret, CORS allowlist, and any cookie-domain or challenge-encryption settings required by your topology.
 
 ### Local Development Environment
 When running locally, the automatic startup script behaves identically. However, developers have an extra API utility available to them. 
 If you are iterating on the database and need to violently reset the administration account natively to the newest models, you can invoke the seeding endpoint easily using **Swagger UI**:
+
+For the exact development configuration keys and defaults used by the API, refer to `backend/IntranetPortal.Api/README.md`.
 
 1. Open your browser and navigate to your API's Swagger documentation: `http://localhost:<port>/swagger` (or whatever local port Kestrel output during boot).
 2. Expand the **Auth** section and click on the **POST `/api/auth/seed-test-admin`** route.
