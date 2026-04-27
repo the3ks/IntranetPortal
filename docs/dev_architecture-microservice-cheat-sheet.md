@@ -1,3 +1,9 @@
+---
+title: "[DEV] Architecture Standalone Microservices Cheat Sheet"
+description: "Universal standard for scaffolding standalone microservice modules that integrate into the IntranetPortal ecosystem — covering SSO token bridging, dynamic RBAC replication, dual-database setup, and micro-frontend shell conventions."
+date: "2026-04-28"
+author: "Architecture Team"
+---
 # Universal Microservice Architecture: Context Cheat Sheet
 
 *Drag and drop this file into your brand new empty Workspace before you prompt the AI so it instantly remembers the overarching architecture!*
@@ -44,14 +50,15 @@ The Core Monolith issues a JWT upon login and saves it natively as a cookie name
 
 ### Backend (.NET API) Setup
 - The new .NET API must authenticate users mathematically using the exact same `JwtSettings` from the Monolith.
-- `appsettings.json` must match the Core. For local dev, default to mock values:
+- `appsettings.json` must match the Core **exactly** — including `Issuer` and `Audience`. For local dev, default to:
     ```json
     "JwtSettings": {
       "Key": "DevelopmentSecretKeyThatIsAtLeast32Bytes",
-      "Issuer": "IntranetPortalLocal",
-      "Audience": "IntranetPortalMicroservices"
+      "Issuer": "IntranetPortalAPI",
+      "Audience": "IntranetPortalFrontend"
     }
     ```
+    > ⚠️ **Critical:** If `Issuer` or `Audience` do not match the Core Monolith's values, JWT validation will silently reject every request with a `401`. Always copy these values verbatim from the Core's `appsettings.json`.
 - Use Native Controller Authorization: Secure endpoints using attributes like `[Authorize(Policy = "Module.Action")]`.
 - **CRITICAL DATA RULE (Identity & Scopes):** The Core Monolith inherently packs five exact identity claims inside the `auth_token`: `"EmployeeId"`, `"FullName"`, `"SiteId"`, `"DepartmentId"`, and `"TeamId"`.
   - **Identity:** To associate a physical record with a user, extract loosely: `user.FindFirst("EmployeeId")?.Value`. Do not use `NameIdentifier`.
@@ -91,8 +98,16 @@ A microservice must manage its own table configurations cleanly, scaling for bot
 Microservices automatically broadcast their required internal permissions to the Core Monolith when booting.
 
 **Implementation Rules:**
-- Configure an `InternalSecret` in `appsettings.json`.
-- Scaffold a `BackgroundService` to HTTP POST the local permissions payload to the Monolith's internal `/api/internal/permissions/register` endpoint.
+- Configure the `CoreApi` block in `appsettings.json`:
+    ```json
+    "CoreApi": {
+      "BaseUrl": "http://localhost:5254",
+      "InternalSecret": "DevelopmentInternalSecret123!"
+    }
+    ```
+  - `CoreApi:BaseUrl` — the URL of the running Core Monolith API.
+  - `CoreApi:InternalSecret` — must match the Core's `InternalApiSettings:Secret` value exactly.
+- Scaffold a `BackgroundService` (`HostedServices/PermissionRegistrationService.cs`) to HTTP POST the local permissions payload to the Monolith's internal `/api/internal/permissions/register` endpoint.
 - Wrap this in a `try/catch` loop with `Task.Delay(10000)` to continuously retry if the monolith is offline.
 
 ---
@@ -113,4 +128,52 @@ Always ensure that the microservice repository contains its own `.geminirules` f
 
 ---
 
-**AI Assistant:** When the user drops this file in your workspace, immediately acknowledge these architectural rules and offer to run `npx create-next-app@latest` followed by `dotnet new webapi -use-controllers` to scaffold the repository!
+### 7. Configuration Reference (appsettings.json)
+
+All required and optional configuration keys for a standard microservice. Use this as a checklist when setting up `appsettings.json`, `appsettings.Development.json`, and `appsettings.Production.json`.
+
+#### `JwtSettings` ⚠️ Required (SSO Handshake)
+These keys MUST match the Core Monolith's configuration exactly. They allow the microservice to mathematically validate the `auth_token` cookie without querying the Monolith for every request.
+
+| Key | Dev Default | Description |
+|---|---|---|
+| `JwtSettings:Key` | `"DevelopmentSecretKey..."` | HMAC-SHA256 signing secret (≥ 32 chars). Must be identical to the Core's key. |
+| `JwtSettings:Issuer` | `"IntranetPortalAPI"` | The `iss` claim. Must match the Core Monolith exactly. |
+| `JwtSettings:Audience` | `"IntranetPortalFrontend"` | The `aud` claim. Must match the Core Monolith exactly. |
+
+#### `CoreApi` ⚠️ Required (RBAC Bridge)
+The microservice uses these settings to communicate with the Core Monolith's internal APIs, primarily for auto-registering its local permissions upon startup.
+
+| Key | Dev Default | Description |
+|---|---|---|
+| `CoreApi:BaseUrl` | `"http://localhost:5254"` | The URL where the Core Monolith API is reachable. |
+| `CoreApi:InternalSecret` | `"DevInternalSecret123!"` | Shared secret header for internal API-to-API calls. Must match the Core's `InternalApiSettings:Secret`. |
+
+#### `ConnectionStrings` ⚠️ Required
+The microservice is isolated and must have its own dedicated database.
+
+| Key | Dev Default | Prod Example |
+|---|---|---|
+| `ConnectionStrings:DefaultConnection` | `"Data Source=module.db"` | `"Server=127.0.0.1;Database=portal_module;Uid=...;Pwd=...;"` |
+
+> [!NOTE]
+> The dual-database switch (SQLite for Dev ↔ MySQL for Prod) is driven by `IsDevelopment()` in `Program.cs`. Do not use a custom config flag for this.
+
+#### `AllowedOrigins` (Production only)
+Used to configure CORS to allow the frontend to send the `auth_token` cookie with API requests.
+
+| Key | Description |
+|---|---|
+| `AllowedOrigins` | JSON array of allowed CORS origins (e.g., `["https://module.company.com"]`). |
+
+#### `AllowedHosts`
+Standard ASP.NET Core host filtering.
+
+| Environment | Recommended Value |
+|---|---|
+| Development | `"*"` |
+| Production | `"module-api.yourcompany.com"` |
+
+---
+
+**AI Assistant:** When the user drops this file in your workspace, immediately acknowledge these architectural rules and offer to run `npx create-next-app@latest` followed by `dotnet new webapi --use-controllers` to scaffold the repository!
