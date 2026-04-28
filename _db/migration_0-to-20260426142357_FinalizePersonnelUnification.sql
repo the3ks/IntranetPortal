@@ -177,9 +177,9 @@ INSERT INTO `am_assetcategories` (`Id`, `Name`, `Description`, `ParentCategoryId
 	(1, 'IT Hardware', 'High-value, serialized equipment like laptops and servers.', NULL, 1, 1, 0, 1, NULL),
 	(2, 'Accessories & Peripherals', 'Low value items like mice.', NULL, 1, 1, 0, 2, NULL),
 	(3, 'Office Stationaries', 'Standard office supplies.', NULL, 1, 1, 1, NULL, NULL),
-	(4, 'Laptops', NULL, NULL, 1, 1, 0, NULL, NULL),
-	(5, 'Monitors', NULL, NULL, 1, 1, 0, NULL, NULL),
-	(6, 'Peripherals', '', NULL, 1, 1, 0, 2, 2);
+	(4, 'Laptops', '', 1, 1, 1, 0, NULL, NULL),
+	(5, 'Monitors', '', 1, 1, 1, 0, NULL, NULL),
+	(6, 'Peripherals', '', 2, 1, 1, 0, NULL, NULL);
 
 -- Dumping structure for table intranetportal.am_assetcategoryapprovergroups
 CREATE TABLE IF NOT EXISTS `am_assetcategoryapprovergroups` (

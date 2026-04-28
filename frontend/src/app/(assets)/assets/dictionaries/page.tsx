@@ -212,10 +212,12 @@ export default function DictionariesPage() {
               {categories.map(c => (
                 <tr key={c.id} className={`border-b border-gray-50 hover:bg-background/50/50 ${!c.isActive ? 'opacity-50 grayscale' : ''}`}>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    <div className="flex items-center">
-                      {c.depth > 0 && <span aria-hidden="true" className="inline-block" style={{ width: `${c.depth * 1.25}rem` }} />}
+                    <div
+                      className={`flex items-center rounded-md ${c.depth > 0 ? "pl-2 border-l-2 border-blue-200/70 bg-blue-50/20" : ""}`}
+                      style={{ marginLeft: `${c.depth * 1.25}rem` }}
+                    >
                       {c.depth > 0 && (
-                        <svg className="w-4 h-4 text-foreground/20 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-foreground/30 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       )}
