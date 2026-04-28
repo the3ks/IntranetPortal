@@ -82,6 +82,35 @@ To ensure "Zero Context-Switching" for developers working across the platform, a
 ### Frontend (Next.js) Setup
 The new Next.js micro-frontend must blindly extract the `auth_token` cookie and decode it to know who the user is using Server Actions.
 
+**Logout Implementation:**
+Since the microservice does NOT handle login or session management, logout is a single redirect to the Core Monolith's login page with `?reason=signed_out`. The Core middleware intercepts this, clears the `auth_token` cookie server-side, and shows the login page.
+
+1. **Create a `logoutAction()` Server Action** in `src/app/actions/auth.ts`:
+   ```tsx
+   "use server";
+   import { redirect } from "next/navigation";
+
+   export async function logoutAction() {
+     const coreBaseUrl = process.env.NEXT_PUBLIC_CORE_URL || "https://intranet.example.com";
+     redirect(`${coreBaseUrl}/login?reason=signed_out`);
+   }
+   ```
+
+2. **Call this action from your Header/Logout button** (same pattern as the Monolith):
+   ```tsx
+   import { logoutAction } from "@/app/actions/auth";
+
+   <form action={logoutAction}>
+     <button type="submit">Logout</button>
+   </form>
+   ```
+
+**Why this works:**
+- `redirect()` to `{coreBaseUrl}/login?reason=signed_out` sends the browser to the Core Monolith's Next.js middleware.
+- The Core middleware detects `reason=signed_out`, clears the `auth_token` cookie in the response, and serves the login page.
+- Since the Core's own server sets the `Set-Cookie` header on its own response, cross-domain cookie issues are eliminated entirely.
+- All future logout enhancements (refresh token revocation, audit logging, etc.) go in one place: the Core's middleware logout-reason handler.
+
 ---
 
 ## 3. Database Rules & EF Configurations

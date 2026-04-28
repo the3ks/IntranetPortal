@@ -14,7 +14,5 @@ export async function getUserSession() {
 }
 
 export async function logoutAction() {
-  const cookieStore = await cookies();
-  cookieStore.delete("auth_token");
-  redirect("/login");
+  redirect("/login?reason=signed_out");
 }

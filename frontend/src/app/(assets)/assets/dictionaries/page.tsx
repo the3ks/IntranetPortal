@@ -3,6 +3,11 @@ import { useState, useEffect } from "react";
 import { getCategoriesAction, getModelsAction, getApproverGroupsAction, createCategoryAction, createModelAction, updateCategoryAction, toggleCategoryAction, updateModelAction, toggleModelAction } from "@/app/actions/assets";
 import ApproverGroupsManager from "./ApproverGroupsManager";
 
+const formatHierarchyLabel = (name: string, depth: number) => {
+  if (depth <= 0) return name;
+  return `${"-- ".repeat(depth)}${name}`;
+};
+
 export default function DictionariesPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [models, setModels] = useState<any[]>([]);
@@ -140,7 +145,11 @@ export default function DictionariesPage() {
               <label className="text-xs font-bold text-foreground/60 uppercase">Parent Category (Optional)</label>
               <select className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-blue-400 bg-card" value={newCatParentId} onChange={e => setNewCatParentId(e.target.value)}>
                 <option value="">None (Top-Level)</option>
-                {categories.filter(c => c.isActive && c.id !== editingCategoryId).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {categories.filter(c => c.isActive && c.id !== editingCategoryId).map(c => (
+                  <option key={c.id} value={c.id}>
+                    {formatHierarchyLabel(c.name, c.depth)}
+                  </option>
+                ))}
               </select>
             </div>
             <div><label className="text-xs font-bold text-foreground/60 uppercase">Description</label><input className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-blue-400 bg-background" value={newCatDesc} onChange={e => setNewCatDesc(e.target.value)} /></div>
@@ -203,9 +212,18 @@ export default function DictionariesPage() {
               {categories.map(c => (
                 <tr key={c.id} className={`border-b border-gray-50 hover:bg-background/50/50 ${!c.isActive ? 'opacity-50 grayscale' : ''}`}>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    {c.parentCategoryId && <span className="text-foreground/40 text-xs mr-1">{categories.find(p => p.id === c.parentCategoryId)?.name} /</span>}
-                    {c.name}
-                    {c.description && <span className="block text-xs text-foreground/40 font-normal">{c.description}</span>}
+                    <div className="flex items-center">
+                      {c.depth > 0 && <span aria-hidden="true" className="inline-block" style={{ width: `${c.depth * 1.25}rem` }} />}
+                      {c.depth > 0 && (
+                        <svg className="w-4 h-4 text-foreground/20 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                      <div>
+                        {c.name}
+                        {c.description && <span className="block text-xs text-foreground/40 font-normal">{c.description}</span>}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     {c.requiresApproval ? (
@@ -269,7 +287,11 @@ export default function DictionariesPage() {
             <div><label className="text-xs font-bold text-foreground/60 uppercase">Parent Category</label>
               <select required className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-indigo-400 bg-card" value={newModelCatId} onChange={e => setNewModelCatId(e.target.value)}>
                 <option value="">Select Category...</option>
-                {categories.filter(c => c.isActive).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {categories.filter(c => c.isActive).map(c => (
+                  <option key={c.id} value={c.id}>
+                    {formatHierarchyLabel(c.name, c.depth)}
+                  </option>
+                ))}
               </select>
             </div>
             <div><label className="text-xs font-bold text-foreground/60 uppercase">Manufacturer</label><input required className="w-full mt-1 border border-border/50 rounded-lg p-2 text-sm outline-none focus:border-indigo-400" value={newModelManuf} onChange={e => setNewModelManuf(e.target.value)} placeholder="e.g. Dell, Apple" /></div>

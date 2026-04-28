@@ -21,3 +21,22 @@ The following major architectural features have been designated for future devel
 
 ## 3. Audit Logs in each module
 
+## 4. JWT Security Hardening — Refresh Token & Server-Side Revocation
+
+**Context:** Currently, `logoutAction()` only deletes the `auth_token` cookie in the browser. The JWT itself remains cryptographically valid on the backend for up to 8 hours after logout. A captured token could still be used post-logout.
+
+**Proposed Solution: Short-lived JWT + Refresh Token (server-side revocation)**
+
+- Shorten `auth_token` lifetime to **15 minutes**
+- On login, backend issues a second **refresh token** (opaque, stored in DB) set as a separate `httpOnly` cookie (`refresh_token`, 8h)
+- Add a `POST /api/auth/refresh` endpoint on the backend: validates the refresh token against DB, issues a new short-lived JWT
+- Add a `POST /api/auth/logout` endpoint on the backend: marks the refresh token as revoked in DB
+- Update `logoutAction()` to call the backend logout endpoint before deleting both cookies
+- Add a silent background refresh in the main app root layout (client-side `setInterval` every ~10 min) to transparently renew the JWT while the user is active
+
+**Microservice consideration:**
+- Each standalone microservice frontend should also call the main app's `POST /api/auth/refresh` route (same root-domain cookie is sent automatically via `credentials: "include"`) to renew the token when the user is active in that microservice
+- This prevents 401s when a user stays on a microservice tab beyond the JWT lifetime without the main app tab open
+
+**Risk without this:** Acceptable for a corporate intranet (attacker must already be inside the network), but implementing this closes the post-logout token reuse window from 8h down to ≤15 min.
+

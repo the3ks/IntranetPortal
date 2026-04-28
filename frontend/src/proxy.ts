@@ -4,6 +4,22 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const token = request.cookies.get("auth_token")?.value;
   const isLoginPage = request.nextUrl.pathname.startsWith("/login");
+  const logoutReason = request.nextUrl.searchParams.get("reason");
+  const isLogoutRedirect = logoutReason === "signed_out" || request.nextUrl.searchParams.has("kickout");
+
+  // Handle centralized logout redirect and clear auth cookie.
+  // Preferred flag is /login?reason=signed_out (legacy kickout still supported).
+  // Future enhancements (refresh token revocation, etc.) should be added here.
+  if (isLoginPage && isLogoutRedirect) {
+    const response = NextResponse.next();
+    response.cookies.set({
+      name: "auth_token",
+      value: "",
+      path: "/",
+      maxAge: 0,
+    });
+    return response;
+  }
 
   // Protect internal routes: Redirect unauthenticated users to the login screen
   if (!token && !isLoginPage) {
@@ -11,7 +27,7 @@ export function proxy(request: NextRequest) {
   }
 
   // Block authenticated users from viewing the login screen
-  if (token && isLoginPage) {
+  if (token && isLoginPage && !isLogoutRedirect) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
