@@ -27,21 +27,21 @@ export default async function Home() {
 
       <AttendanceWidget />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl mx-auto">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 w-full px-4">
         {modules.map((mod: any, index: number) => {
           const color = colors[index % colors.length];
           const isExternal = mod.url.startsWith("http");
           const LinkTag = isExternal ? "a" : Link;
           
           return (
-            <LinkTag key={mod.id} href={mod.url} className={`group bg-card p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-border/50 ${color.border} transition-all transform hover:-translate-y-1 block relative overflow-hidden`}>
-              <div className={`absolute top-0 right-0 w-48 h-48 ${color.bg} rounded-full blur-3xl -mr-16 -mt-16 ${color.hoverBg} transition-colors`}></div>
+            <LinkTag key={mod.id} href={mod.url} className={`group bg-card p-4 rounded-xl shadow-[0_2px_8px_rgb(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgb(0,0,0,0.12)] border border-border/50 ${color.border} transition-all transform hover:-translate-y-1 block relative overflow-hidden`}>
+              <div className={`absolute top-0 right-0 w-32 h-32 ${color.bg} rounded-full blur-2xl -mr-8 -mt-8 ${color.hoverBg} transition-colors`}></div>
               <div 
-                className={`w-16 h-16 bg-gradient-to-br ${color.from} ${color.to} rounded-2xl flex items-center justify-center text-white shadow-xl ${color.shadow} mb-6 transform group-hover:scale-110 transition-transform duration-300`} 
-                dangerouslySetInnerHTML={{ __html: mod.iconSvg }} 
+                className={`w-12 h-12 bg-gradient-to-br ${color.from} ${color.to} rounded-lg flex items-center justify-center text-white shadow-lg ${color.shadow} mb-3 transform group-hover:scale-110 transition-transform duration-300 cursor-help`} 
+                dangerouslySetInnerHTML={{ __html: mod.iconSvg }}
+                title={mod.description}
               />
-              <h3 className={`text-2xl font-bold text-foreground mb-3 group-hover:${color.text} transition-colors`}>{mod.name}</h3>
-              <p className="text-foreground/70 font-medium leading-relaxed">{mod.description}</p>
+              <h3 className={`text-sm font-bold text-foreground group-hover:${color.text} transition-colors line-clamp-2`}>{mod.name}</h3>
             </LinkTag>
           );
         })}
